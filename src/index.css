@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-maple-orange: #ff6600;
+  --color-maple-orange-dark: #cc5200;
+  --color-maple-gold: #ffcc00;
+  --color-maple-blue: #3366cc;
+  --color-maple-blue-dark: #264d99;
+  --color-maple-green: #33cc66;
+  --color-maple-dark: #0a0e1a;
+  --color-maple-card: #111827;
+  --color-maple-border: #1e293b;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: url("/assets/site_wallpaper.jpg") center top / cover no-repeat fixed;
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-maple-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-maple-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-maple-orange);
+}
