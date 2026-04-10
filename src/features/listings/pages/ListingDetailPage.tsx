@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useListingDetailPage } from "../hooks/useListingDetailPage";
 import {
@@ -30,6 +31,20 @@ const statLabels: Record<string, string> = {
 export const ListingDetailPage = () => {
   const { listing, isLoading, isOwner, activeStats, handleDelete, isDeleting } =
     useListingDetailPage();
+  const [showImageModal, setShowImageModal] = useState(false);
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowImageModal(false);
+      }
+    };
+    if (showImageModal) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [showImageModal]);
 
   if (isLoading) return <Spinner />;
 
@@ -127,14 +142,18 @@ export const ListingDetailPage = () => {
           {listing.listingImageUrl && (
             <div>
               <h2 className="text-lg font-semibold text-slate-200 mb-3">🖼️ Seller Screenshot</h2>
-              <div className="overflow-hidden rounded-2xl border border-maple-border bg-slate-900/70">
+              <div 
+                onClick={() => setShowImageModal(true)}
+                className="overflow-hidden rounded-2xl border border-maple-border bg-slate-900/70 cursor-pointer hover:border-maple-orange transition-colors group"
+              >
                 <img
                   src={listing.listingImageUrl}
                   alt={`${listing.itemName} screenshot`}
-                  className="w-full object-contain"
+                  className="w-full object-contain group-hover:opacity-80 transition-opacity"
                   loading="lazy"
                 />
               </div>
+              <p className="text-xs text-slate-400 mt-1">✨ Click to enlarge</p>
             </div>
           )}
 
@@ -269,6 +288,37 @@ export const ListingDetailPage = () => {
           )}
         </div>
       </Card>
+
+      {/* Image Lightbox Modal */}
+      {showImageModal && listing.listingImageUrl && (
+        <div 
+          onClick={() => setShowImageModal(false)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 group"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] overflow-hidden"
+          >
+            <img
+              src={listing.listingImageUrl}
+              alt={`${listing.itemName} screenshot - enlarged`}
+              className="w-full h-full object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 bg-maple-dark/80 hover:bg-maple-orange text-white p-3 rounded-full transition-colors"
+              aria-label="Close image"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <p className="absolute bottom-4 left-0 right-0 text-center text-slate-300 text-sm">
+              Click outside or press ESC to close
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
