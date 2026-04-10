@@ -107,12 +107,12 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
           )}
           {listing.scrollSuccessRate != null && (
             <Badge variant="orange" size="sm">
-              {listing.scrollSuccessRate}%
+              {`${listing.scrollSuccessRate}%`}
             </Badge>
           )}
           {listing.amount != null && listing.amount > 1 && (
             <Badge variant="gold" size="sm">
-              x{listing.amount}
+              {`x${listing.amount}`}
             </Badge>
           )}
           <Badge variant={listing.listingImageUrl ? "blue" : "gray"} size="sm">

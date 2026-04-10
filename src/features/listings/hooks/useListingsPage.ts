@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useListings } from "./useListings";
-import type { Listing } from "@/types";
 
 const ITEMS_PER_PAGE = 20;
 

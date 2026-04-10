@@ -40,7 +40,7 @@ const sanitizeListingData = <T extends Partial<ListingFormData>>(data: T): T => 
   return cleaned;
 };
 
-const prepareListingUpdateData = (data: Partial<ListingFormData>) => {
+const prepareListingUpdateData = (data: Partial<ListingFormData>): Record<string, unknown> => {
   const nextData: Record<string, unknown> = {};
 
   Object.entries(data).forEach(([key, value]) => {
@@ -145,7 +145,8 @@ export const updateListing = async (
   data: Partial<ListingFormData>
 ): Promise<void> => {
   const docRef = doc(db, LISTINGS_COLLECTION, id);
-  await updateDoc(docRef, prepareListingUpdateData(data));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await updateDoc(docRef, prepareListingUpdateData(data) as any);
 };
 
 /** Backfill username/avatar on listings that are missing them */
