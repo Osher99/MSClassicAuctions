@@ -10,6 +10,7 @@ import {
   subscribeToUnreadCount,
 } from "@/services";
 import type { Conversation, ChatMessage } from "@/types";
+import toast from "react-hot-toast";
 
 /** Real-time messages for a conversation */
 export const useChatMessages = (conversationId: string | null) => {
@@ -73,7 +74,9 @@ export const useChatPage = (conversationId: string) => {
   // Mark as read when viewing
   useEffect(() => {
     if (user && conversationId && conversation?.participants.includes(user.uid)) {
-      markConversationRead(conversationId, user.uid);
+      markConversationRead(conversationId, user.uid).catch((error) => {
+        console.error("markConversationRead failed:", error);
+      });
     }
   }, [conversationId, user, conversation, messages.length]);
 
@@ -91,6 +94,10 @@ export const useChatPage = (conversationId: string) => {
     setSending(true);
     try {
       await sendMessage(conversationId, user.uid, text, otherParticipantId);
+    } catch (error) {
+      console.error("sendMessage failed:", error);
+      setInput(text);
+      toast.error("Could not send message right now.");
     } finally {
       setSending(false);
     }

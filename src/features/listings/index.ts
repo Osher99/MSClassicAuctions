@@ -7,6 +7,7 @@ export { CreateListingPage } from "./pages/CreateListingPage";
 export { EditListingPage } from "./pages/EditListingPage";
 export { ListingDetailPage } from "./pages/ListingDetailPage";
 export { MyListingsPage } from "./pages/MyListingsPage";
+export { LikedListingsPage } from "./pages/LikedListingsPage";
 export {
   useListings,
   useListing,
@@ -16,3 +17,4 @@ export {
   useReactivateListing,
   useDeleteListing,
 } from "./hooks/useListings";
+export { useListingLike } from "./hooks/useListingLike";

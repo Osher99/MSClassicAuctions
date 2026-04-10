@@ -48,14 +48,11 @@ export const Navbar = () => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              to="/"
-              className="text-slate-300 hover:text-maple-orange transition-colors text-sm font-medium"
-            >
-              Marketplace
-            </Link>
             {user ? (
               <>
+                <Link to="/liked-listings">
+                  <Button variant="secondary" size="sm">Liked Listings</Button>
+                </Link>
                 <Link to="/my-listings">
                   <Button variant="secondary" size="sm">My Listings</Button>
                 </Link>
@@ -114,7 +111,7 @@ export const Navbar = () => {
           {/* Mobile hamburger */}
           <button
             onClick={toggleMobile}
-            className="md:hidden p-2 text-slate-300 hover:text-white"
+            className="md:hidden p-2 text-slate-300 hover:text-white relative"
           >
             <svg
               className="h-6 w-6"
@@ -138,6 +135,14 @@ export const Navbar = () => {
                 />
               )}
             </svg>
+            {user && unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 z-10 flex items-center justify-center">
+                <span className="absolute inline-flex h-5 w-5 rounded-full bg-red-500/75 animate-ping" />
+                <span className="relative bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 inline-flex items-center justify-center px-1 ring-2 ring-maple-dark">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -146,15 +151,15 @@ export const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden border-t border-maple-border bg-maple-dark/95 backdrop-blur-md">
           <div className="px-4 py-4 space-y-3">
-            <Link
-              to="/"
-              onClick={() => setMobileOpen(false)}
-              className="block text-slate-300 hover:text-maple-orange transition-colors font-medium"
-            >
-              Marketplace
-            </Link>
             {user ? (
               <>
+                <Link
+                  to="/liked-listings"
+                  onClick={closeMobile}
+                  className="block"
+                >
+                  <Button variant="secondary" className="w-full">Liked Listings</Button>
+                </Link>
                 <Link
                   to="/my-listings"
                   onClick={closeMobile}

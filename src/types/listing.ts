@@ -64,6 +64,9 @@ export interface Listing {
   condition: "clean" | "scrolled";
   stats: ItemStats;
 
+  // Engagement
+  likeCount: number;
+
   // System
   userId: string;
   userEmail: string;
@@ -74,4 +77,4 @@ export interface Listing {
   isActive: boolean;
 }
 
-export type ListingFormData = Omit<Listing, "id" | "userId" | "userEmail" | "username" | "userAvatarUrl" | "createdAt" | "expiresAt" | "isActive">;
+export type ListingFormData = Omit<Listing, "id" | "likeCount" | "userId" | "userEmail" | "username" | "userAvatarUrl" | "createdAt" | "expiresAt" | "isActive">;

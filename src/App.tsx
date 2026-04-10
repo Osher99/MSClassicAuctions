@@ -7,6 +7,7 @@ import {
   CreateListingPage,
   EditListingPage,
   MyListingsPage,
+  LikedListingsPage,
 } from "@/features/listings";
 import { AdminPage } from "@/features/admin";
 import { ChatListPage, ChatPage } from "@/features/chat";
@@ -43,6 +44,14 @@ export const App = () => (
           element={
             <ProtectedRoute>
               <MyListingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/liked-listings"
+          element={
+            <ProtectedRoute>
+              <LikedListingsPage />
             </ProtectedRoute>
           }
         />

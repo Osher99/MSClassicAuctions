@@ -33,9 +33,18 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isNotBanned()
         && request.resource.data.userId == request.auth.uid;
 
-      // Owner or admin can update/delete
-      allow update: if (isOwner(resource.data.userId) && isNotBanned()) || isAdmin();
+      // Owner/admin can update anything; authenticated users can only change likeCount.
+      allow update: if (isOwner(resource.data.userId) && isNotBanned())
+        || isAdmin()
+        || (isAuthenticated()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likeCount"]));
       allow delete: if isOwner(resource.data.userId) || isAdmin();
+
+      // --- LIKES subcollection ---
+      match /likes/{likeUserId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
     }
 
     // --- USERS ---
@@ -66,22 +75,7 @@ service cloud.firestore {
         && request.resource.data.participants.size() == 2;
 
       allow update: if isAuthenticated()
-        && request.auth.uid in resource.data.participants
-        && (
-          (
-            resource.data.blocked != true
-            && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(["lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount"])
-          )
-          ||
-          (
-            resource.data.blocked != true
-            && request.resource.data.blocked == true
-            && request.resource.data.blockedBy == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(["blocked", "blockedBy", "blockedAt", "blockReason"])
-          )
-        );
+        && request.auth.uid in resource.data.participants;
 
       allow delete: if isAdmin();
 
@@ -93,7 +87,6 @@ service cloud.firestore {
         allow create: if isAuthenticated()
           && request.auth.uid in
             get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
-          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.blocked != true
           && request.resource.data.sender == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0

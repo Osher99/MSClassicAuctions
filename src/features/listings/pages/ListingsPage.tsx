@@ -1,9 +1,11 @@
 import { useListingsPage } from "../hooks/useListingsPage";
+import { SORT_OPTIONS } from "../hooks/useListingsPage";
 import { ListingGrid } from "../components/ListingGrid";
 import { MAPLE_SERVERS } from "../constants";
 import { Spinner, Input, Select, PageHeader, Button } from "@/components/ui";
 
 const serverOptions = MAPLE_SERVERS.map((s) => ({ value: s, label: s }));
+const sortOptions = SORT_OPTIONS.map((s) => ({ value: s.value, label: s.label }));
 
 export const ListingsPage = () => {
   const {
@@ -12,6 +14,8 @@ export const ListingsPage = () => {
     setSearch,
     serverFilter,
     setServerFilter,
+    sortBy,
+    setSortBy,
     paginated,
     filtered,
     currentPage,
@@ -41,6 +45,12 @@ export const ListingsPage = () => {
           onChange={(e) => setServerFilter(e.target.value)}
           options={serverOptions}
           placeholder="All Servers"
+        />
+        <Select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          options={sortOptions}
+          placeholder="Sort by"
         />
       </div>
 

@@ -21,6 +21,7 @@ export {
   getUserProfiles,
 } from "./user.service";
 export { getAllUsers, getAllListings, updateUserStatus, adminDeleteListing } from "./admin.service";
+export { hasUserLiked, toggleLike, getLikeCount, getUserLikedListingIds } from "./likes.service";
 export {
   getOrCreateConversation,
   sendMessage,
