@@ -62,6 +62,7 @@ export const createConversation = async (
     lastMessageTime: now,
     lastMessageSender: "",
     unreadCount: { [currentUserId]: 0, [otherUserId]: 0 },
+    blocked: false,
     createdAt: now,
   });
   return docRef.id;
@@ -175,6 +176,21 @@ export const markConversationRead = async (
   const convoRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
   await updateDoc(convoRef, {
     [`unreadCount.${userId}`]: 0,
+  });
+};
+
+/** Block a conversation for both participants */
+export const blockConversation = async (
+  conversationId: string,
+  blockerId: string,
+  reason: string
+): Promise<void> => {
+  const convoRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  await updateDoc(convoRef, {
+    blocked: true,
+    blockedBy: blockerId,
+    blockedAt: Timestamp.now(),
+    blockReason: reason.trim().slice(0, 500),
   });
 };
 

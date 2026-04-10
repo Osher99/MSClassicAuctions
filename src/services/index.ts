@@ -29,5 +29,6 @@ export {
   getConversation,
   markConversationRead,
   subscribeToUnreadCount,
+  blockConversation,
 } from "./chat.service";
 export { createReport, getAllReports, updateReportStatus } from "./report.service";

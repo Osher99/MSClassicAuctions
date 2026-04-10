@@ -4,7 +4,7 @@ import { useChatPage } from "../hooks/useChat";
 import { useAuth } from "@/features/auth";
 import { Spinner } from "@/components/ui";
 import { getUserProfile } from "@/services";
-import { createReport } from "@/services";
+import { createReport, blockConversation } from "@/services";
 import { useEffect } from "react";
 import type { UserProfile } from "@/types";
 import toast from "react-hot-toast";
@@ -70,11 +70,12 @@ export const ChatPage = () => {
         conversationId,
         reason: reportReason.trim(),
       });
-      toast.success("Report submitted");
+      await blockConversation(conversationId, user.uid, reportReason.trim());
+      toast.success("Report submitted. This chat is now blocked for both users.");
       setShowReport(false);
       setReportReason("");
     } catch {
-      toast.error("Failed to submit report");
+      toast.error("Failed to submit report and block");
     } finally {
       setReportSending(false);
     }
@@ -118,21 +119,24 @@ export const ChatPage = () => {
             <span className="text-sm text-slate-400">Loading...</span>
           )}
         </div>
-        {profile?.role !== "admin" && (
+        {profile?.role !== "admin" && !conversation.blocked && (
           <button
             onClick={() => setShowReport(true)}
             className="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10"
           >
-            ⚠️ Report
+            ⚠️ Report & Block
           </button>
         )}
       </div>
 
       {/* Item Preview Banner */}
-      <div className="bg-slate-800/70 border-x border-maple-border px-4 py-3">
+      <div className="bg-slate-800/90 border-x border-maple-border px-4 py-3">
+        <p className="text-[11px] text-slate-300 uppercase tracking-wide mb-2">
+          About this item
+        </p>
         <Link
           to={`/listings/${listing.id}`}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 hover:opacity-90 transition-opacity"
         >
           <img
             src={listing.itemIconUrl}
@@ -140,16 +144,16 @@ export const ChatPage = () => {
             className="w-10 h-10 object-contain"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400">About this item</p>
-            <p className="text-sm font-medium text-white truncate">
+            <p className="text-sm font-semibold text-white leading-5 break-words">
               {listing.itemName}
             </p>
+            <p className="text-xs text-slate-300 mt-0.5 md:hidden">{listing.server}</p>
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-maple-gold">
               {listing.price.toLocaleString()} mesos
             </p>
-            <p className="text-xs text-slate-400">{listing.server}</p>
+            <p className="text-xs text-slate-300 hidden md:block">{listing.server}</p>
           </div>
         </Link>
       </div>
@@ -194,26 +198,32 @@ export const ChatPage = () => {
       </div>
 
       {/* Message Input */}
-      <div className="bg-maple-card border border-maple-border rounded-b-2xl px-3 py-3 flex items-center gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          maxLength={1000}
-          className="flex-1 bg-slate-800 border border-maple-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-maple-orange transition-colors"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!input.trim() || sending}
-          className="bg-maple-orange hover:bg-maple-gold disabled:opacity-40 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-          </svg>
-        </button>
-      </div>
+      {conversation.blocked ? (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-b-2xl px-4 py-3 text-sm text-red-300">
+          This conversation was blocked after a report. Messaging is disabled for both users.
+        </div>
+      ) : (
+        <div className="bg-maple-card border border-maple-border rounded-b-2xl px-3 py-3 flex items-center gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            maxLength={1000}
+            className="flex-1 bg-slate-800 border border-maple-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-maple-orange transition-colors"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || sending}
+            className="bg-maple-orange hover:bg-maple-gold disabled:opacity-40 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Report Modal */}
       {showReport && (
@@ -225,9 +235,10 @@ export const ChatPage = () => {
             onClick={(e) => e.stopPropagation()}
             className="bg-maple-card border border-maple-border rounded-2xl p-6 w-full max-w-md space-y-4"
           >
-            <h3 className="text-lg font-bold text-white">⚠️ Report User</h3>
+            <h3 className="text-lg font-bold text-white">⚠️ Report & Block User</h3>
             <p className="text-sm text-slate-400">
               Report <span className="text-white font-medium">{otherProfile?.username}</span> for inappropriate behavior.
+              After submitting, this conversation will be blocked for both users and messaging will be disabled.
             </p>
             <textarea
               value={reportReason}
@@ -249,7 +260,7 @@ export const ChatPage = () => {
                 disabled={!reportReason.trim() || reportSending}
                 className="flex-1 px-4 py-2 text-sm rounded-lg bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white font-medium transition-colors"
               >
-                {reportSending ? "Sending..." : "Submit Report"}
+                {reportSending ? "Submitting..." : "Submit Report & Block"}
               </button>
             </div>
           </div>

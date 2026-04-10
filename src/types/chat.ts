@@ -15,6 +15,10 @@ export interface Conversation {
   lastMessageSender: string;
   /** Map of participant uid → number of unread messages */
   unreadCount: Record<string, number>;
+  blocked?: boolean;
+  blockedBy?: string;
+  blockedAt?: Timestamp;
+  blockReason?: string;
   createdAt: Timestamp;
 }
 

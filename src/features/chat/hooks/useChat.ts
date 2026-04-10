@@ -85,7 +85,7 @@ export const useChatPage = (conversationId: string) => {
   const otherParticipantId = conversation?.participants.find((p) => p !== user?.uid) ?? "";
 
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !user || !otherParticipantId || sending) return;
+    if (!input.trim() || !user || !otherParticipantId || sending || conversation?.blocked) return;
     const text = input.trim();
     setInput("");
     setSending(true);
@@ -94,7 +94,7 @@ export const useChatPage = (conversationId: string) => {
     } finally {
       setSending(false);
     }
-  }, [input, user, otherParticipantId, conversationId, sending]);
+  }, [input, user, otherParticipantId, conversationId, sending, conversation]);
 
   return {
     conversation,

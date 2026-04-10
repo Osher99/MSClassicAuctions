@@ -24,12 +24,6 @@ service cloud.firestore {
       );
     }
 
-    function isConversationParticipant(conversationId) {
-      return isAuthenticated() &&
-        request.auth.uid in
-          get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
-    }
-
     // --- LISTINGS ---
     match /listings/{listingId} {
       // Anyone can read active listings
@@ -64,29 +58,42 @@ service cloud.firestore {
 
     // --- CONVERSATIONS ---
     match /conversations/{conversationId} {
-      allow read: if (isAuthenticated() && request.auth.uid in resource.data.participants) || isAdmin();
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
 
-      allow create: if isAuthenticated() && isNotBanned()
+      allow create: if isAuthenticated()
         && request.auth.uid in request.resource.data.participants
         && request.resource.data.participants is list
         && request.resource.data.participants.size() == 2;
 
-      // Users can only update chat metadata for conversations they belong to
-      allow update: if (
-          isAuthenticated()
-          && request.auth.uid in resource.data.participants
-          && isNotBanned()
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(["lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount"])
-        ) || isAdmin();
+      allow update: if isAuthenticated()
+        && request.auth.uid in resource.data.participants
+        && (
+          (
+            resource.data.blocked != true
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(["lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount"])
+          )
+          ||
+          (
+            resource.data.blocked != true
+            && request.resource.data.blocked == true
+            && request.resource.data.blockedBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(["blocked", "blockedBy", "blockedAt", "blockReason"])
+          )
+        );
 
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isConversationParticipant(conversationId) || isAdmin();
+        allow read: if isAuthenticated()
+          && request.auth.uid in
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
 
-        allow create: if isConversationParticipant(conversationId)
-          && isNotBanned()
+        allow create: if isAuthenticated()
+          && request.auth.uid in
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.blocked != true
           && request.resource.data.sender == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
