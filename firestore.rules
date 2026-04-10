@@ -22,6 +22,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != "banned";
     }
 
+    function isConversationParticipant(conversationId) {
+      return isAuthenticated() &&
+        request.auth.uid in
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+    }
+
     // --- LISTINGS ---
     match /listings/{listingId} {
       // Anyone can read active listings
@@ -52,6 +58,50 @@ service cloud.firestore {
         || isAdmin();
 
       allow delete: if isAdmin();
+    }
+
+    // --- CONVERSATIONS ---
+    match /conversations/{conversationId} {
+      allow read: if isConversationParticipant(conversationId) || isAdmin();
+
+      allow create: if isAuthenticated() && isNotBanned()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2;
+
+      // Users can only update chat metadata for conversations they belong to
+      allow update: if (
+          isConversationParticipant(conversationId)
+          && isNotBanned()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount"])
+        ) || isAdmin();
+
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isConversationParticipant(conversationId) || isAdmin();
+
+        allow create: if isConversationParticipant(conversationId)
+          && isNotBanned()
+          && request.resource.data.sender == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // --- REPORTS ---
+    match /reports/{reportId} {
+      allow create: if isAuthenticated() && isNotBanned()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 500;
+
+      allow read, update, delete: if isAdmin();
     }
   }
 }

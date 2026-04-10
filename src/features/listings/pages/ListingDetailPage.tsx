@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useListingDetailPage } from "../hooks/useListingDetailPage";
+import { useStartChat } from "@/features/chat";
+import { useAuth } from "@/features/auth";
 import {
   Button,
   Spinner,
@@ -32,6 +34,27 @@ export const ListingDetailPage = () => {
   const { listing, isLoading, isOwner, activeStats, handleDelete, isDeleting } =
     useListingDetailPage();
   const [showImageModal, setShowImageModal] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { startChat, loading: chatLoading } = useStartChat();
+
+  const handleContactSeller = useCallback(async () => {
+    if (!listing) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    const conversationId = await startChat(listing.userId, {
+      id: listing.id,
+      itemName: listing.itemName,
+      itemIconUrl: listing.itemIconUrl,
+      price: listing.price,
+      server: listing.server,
+    });
+    if (conversationId) {
+      navigate(`/chats/${conversationId}`);
+    }
+  }, [listing, user, startChat, navigate]);
 
   // Close modal on ESC key
   useEffect(() => {
@@ -239,6 +262,19 @@ export const ListingDetailPage = () => {
             </div>
           )}
 
+          {/* Contact Seller */}
+          {user && !isOwner && (
+            <div className="border-t border-maple-border pt-6">
+              <Button
+                onClick={handleContactSeller}
+                loading={chatLoading}
+                className="w-full"
+              >
+                💬 Contact Seller
+              </Button>
+            </div>
+          )}
+
           {/* Share */}
           <div>
             <h2 className="text-sm font-semibold text-slate-400 mb-2">📤 Share this listing</h2>
@@ -268,8 +304,8 @@ export const ListingDetailPage = () => {
           </div>
           </div>
 
-          {/* Owner actions */}
-          {isOwner && (
+          {/* Actions */}
+          {isOwner ? (
             <div className="flex gap-3 mt-6 pt-6 border-t border-maple-border">
               <Link to={`/listings/${listing.id}/edit`} className="flex-1">
                 <Button variant="secondary" className="w-full">
@@ -283,6 +319,12 @@ export const ListingDetailPage = () => {
                 className="flex-1"
               >
                 🗑️ Delete
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6 pt-6 border-t border-maple-border">
+              <Button onClick={handleContactSeller} loading={chatLoading} className="w-full sm:w-auto">
+                💬 Contact Seller
               </Button>
             </div>
           )}

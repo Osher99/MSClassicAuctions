@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllUsers, getAllListings, updateUserStatus, adminDeleteListing } from "@/services";
-import type { UserStatus } from "@/types";
+import { getAllUsers, getAllListings, updateUserStatus, adminDeleteListing, getAllReports, updateReportStatus } from "@/services";
+import type { UserStatus, Report } from "@/types";
 import toast from "react-hot-toast";
 
 const ADMIN_USERS_KEY = ["admin", "users"];
@@ -50,6 +50,29 @@ export const useAdminDeleteListing = () => {
     },
     onError: () => {
       toast.error("Failed to remove listing");
+    },
+  });
+};
+
+const ADMIN_REPORTS_KEY = ["admin", "reports"];
+
+export const useAdminReports = () =>
+  useQuery({
+    queryKey: ADMIN_REPORTS_KEY,
+    queryFn: getAllReports,
+  });
+
+export const useUpdateReportStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reportId, status }: { reportId: string; status: Report["status"] }) =>
+      updateReportStatus(reportId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_REPORTS_KEY });
+      toast.success("Report status updated");
+    },
+    onError: () => {
+      toast.error("Failed to update report");
     },
   });
 };

@@ -9,6 +9,7 @@ import {
   MyListingsPage,
 } from "@/features/listings";
 import { AdminPage } from "@/features/admin";
+import { ChatListPage, ChatPage } from "@/features/chat";
 
 export const App = () => (
   <Layout>
@@ -50,6 +51,22 @@ export const App = () => (
           element={
             <ProtectedRoute>
               <UserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats"
+          element={
+            <ProtectedRoute>
+              <ChatListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats/:conversationId"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />
