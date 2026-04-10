@@ -13,6 +13,7 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
+import toast from "react-hot-toast";
 
 const statLabels: Record<string, string> = {
   str: "STR",
@@ -44,15 +45,24 @@ export const ListingDetailPage = () => {
       navigate("/login");
       return;
     }
-    const conversationId = await startChat(listing.userId, {
-      id: listing.id,
-      itemName: listing.itemName,
-      itemIconUrl: listing.itemIconUrl,
-      price: listing.price,
-      server: listing.server,
-    });
-    if (conversationId) {
-      navigate(`/chats/${conversationId}`);
+    if (!listing.userId || listing.userId === user.uid) {
+      toast.error("Unable to start chat for this listing");
+      return;
+    }
+
+    try {
+      const conversationId = await startChat(listing.userId, {
+        id: listing.id,
+        itemName: listing.itemName,
+        itemIconUrl: listing.itemIconUrl,
+        price: listing.price,
+        server: listing.server,
+      });
+      if (conversationId) {
+        navigate(`/chats/${conversationId}`);
+      }
+    } catch {
+      toast.error("Could not open chat right now. Please try again.");
     }
   }, [listing, user, startChat, navigate]);
 
@@ -261,20 +271,6 @@ export const ListingDetailPage = () => {
               />
             </div>
           )}
-
-          {/* Contact Seller */}
-          {user && !isOwner && (
-            <div className="border-t border-maple-border pt-6">
-              <Button
-                onClick={handleContactSeller}
-                loading={chatLoading}
-                className="w-full"
-              >
-                💬 Contact Seller
-              </Button>
-            </div>
-          )}
-
           {/* Share */}
           <div>
             <h2 className="text-sm font-semibold text-slate-400 mb-2">📤 Share this listing</h2>

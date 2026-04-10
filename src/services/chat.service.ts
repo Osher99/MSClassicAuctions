@@ -21,6 +21,12 @@ const MESSAGES_SUBCOLLECTION = "messages";
 
 const conversationsRef = collection(db, CONVERSATIONS_COLLECTION);
 
+const isPermissionDeniedError = (error: unknown): boolean => {
+  if (!error || typeof error !== "object") return false;
+  const code = (error as { code?: string }).code;
+  return code === "permission-denied" || code === "firestore/permission-denied";
+};
+
 /** Find an existing conversation between two users about a specific listing */
 export const findConversation = async (
   userId: string,
@@ -67,8 +73,16 @@ export const getOrCreateConversation = async (
   sellerId: string,
   listing: Conversation["listing"]
 ): Promise<string> => {
-  const existing = await findConversation(currentUserId, sellerId, listing.id);
-  if (existing) return existing.id;
+  try {
+    const existing = await findConversation(currentUserId, sellerId, listing.id);
+    if (existing) return existing.id;
+  } catch (error) {
+    // Some rule configurations can deny the pre-check query; we can still create safely.
+    if (!isPermissionDeniedError(error)) {
+      throw error;
+    }
+  }
+
   return createConversation(currentUserId, sellerId, listing);
 };
 
