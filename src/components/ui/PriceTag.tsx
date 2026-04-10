@@ -14,16 +14,16 @@ const sizes: Record<string, { amount: string; currency: string }> = {
 
 const formatPrice = (amount: number): string => {
   if (amount >= 1_000_000_000) {
-    const val = Math.floor(amount / 1_000_000_000);
-    return `${val}b`;
+    // Billions: show up to 2 decimal digits (e.g., 1.25b)
+    return `${(amount / 1_000_000_000).toFixed(amount % 1_000_000_000 === 0 ? 0 : 2).replace(/\.00$/, "")}b`;
   }
   if (amount >= 1_000_000) {
-    const val = Math.floor(amount / 1_000_000);
-    return `${val}m`;
+    // Millions: show up to 2 decimal digits (e.g., 9.99m)
+    return `${(amount / 1_000_000).toFixed(amount % 1_000_000 === 0 ? 0 : 2).replace(/\.00$/, "")}m`;
   }
   if (amount >= 1_000) {
-    const val = Math.floor(amount / 1_000);
-    return `${val}k`;
+    // Thousands: show up to 1 decimal digit (e.g., 9.9k)
+    return `${(amount / 1_000).toFixed(amount % 1_000 === 0 ? 0 : 1).replace(/\.0$/, "")}k`;
   }
   return amount.toString();
 };

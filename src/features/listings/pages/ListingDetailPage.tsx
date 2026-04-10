@@ -276,7 +276,7 @@ export const ListingDetailPage = () => {
           {/* Share */}
           <div>
             <h2 className="text-sm font-semibold text-slate-400 mb-2">📤 Share this listing</h2>
-          <div className="flex gap-3">
+          <div className="flex gap-1">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(`${listing.itemName} - ${listing.price.toLocaleString()} Mesos on ${listing.server}\n${window.location.href}`)}`}
               target="_blank"
@@ -302,8 +302,7 @@ export const ListingDetailPage = () => {
             <button
               onClick={toggle}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart"
-              aria-label={liked ? "Unlike" : "Like"}
-            >
+             >
               <svg
                 className={`w-4 h-4 transition-all duration-200 ${liked ? "text-red-500 scale-110" : "text-red-400 group-hover/heart:text-red-300"}`}
                 viewBox="0 0 24 24"
@@ -317,7 +316,7 @@ export const ListingDetailPage = () => {
                   d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
                 />
               </svg>
-              {likeCount > 0 ? likeCount : "Like"}
+              {likeCount > 0 && likeCount}
             </button>
           </div>
           </div>
