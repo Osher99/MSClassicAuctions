@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    function isNotBanned() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != "banned";
+    }
+
+    // --- LISTINGS ---
+    match /listings/{listingId} {
+      // Anyone can read active listings
+      allow read: if true;
+
+      // Authenticated, non-banned users can create listings
+      allow create: if isAuthenticated() && isNotBanned()
+        && request.resource.data.userId == request.auth.uid;
+
+      // Owner or admin can update/delete
+      allow update: if (isOwner(resource.data.userId) && isNotBanned()) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // --- USERS ---
+    match /users/{userId} {
+      // Authenticated users can read any profile (needed for listings display)
+      allow read: if isAuthenticated();
+
+      // Users can only create their own profile
+      allow create: if isOwner(userId);
+
+      // Users can update their own profile (except role/status fields)
+      // Admins can update any profile (for banning/suspending)
+      allow update: if (isOwner(userId) && isNotBanned()
+          && !("role" in request.resource.data.diff(resource.data).affectedKeys())
+          && !("status" in request.resource.data.diff(resource.data).affectedKeys()))
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+  }
+}
