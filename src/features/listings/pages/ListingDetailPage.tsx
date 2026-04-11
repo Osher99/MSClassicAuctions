@@ -40,6 +40,7 @@ export const ListingDetailPage = () => {
   const navigate = useNavigate();
   const { startChat, loading: chatLoading } = useStartChat();
   const { liked, likeCount, toggle } = useListingLike(listing?.id ?? "");
+  const isOwnerListing = user && listing && user.uid === listing.userId;
 
   const handleContactSeller = useCallback(async () => {
     if (!listing) return;
@@ -301,8 +302,11 @@ export const ListingDetailPage = () => {
             </a>
             <button
               onClick={toggle}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart"
-             >
+              disabled={isOwnerListing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart ${isOwnerListing ? "opacity-40 cursor-not-allowed" : ""}`}
+              aria-label={isOwnerListing ? "Cannot like your own listing" : liked ? "Unlike" : "Like"}
+              title={isOwnerListing ? "You cannot like your own listing" : ""}
+            >
               <svg
                 className={`w-4 h-4 transition-all duration-200 ${liked ? "text-red-500 scale-110" : "text-red-400 group-hover/heart:text-red-300"}`}
                 viewBox="0 0 24 24"
