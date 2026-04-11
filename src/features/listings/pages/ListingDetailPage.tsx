@@ -302,7 +302,7 @@ export const ListingDetailPage = () => {
             </a>
             <button
               onClick={toggle}
-              disabled={isOwnerListing}
+              disabled={!!isOwnerListing}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart ${isOwnerListing ? "opacity-40 cursor-not-allowed" : ""}`}
               aria-label={isOwnerListing ? "Cannot like your own listing" : liked ? "Unlike" : "Like"}
               title={isOwnerListing ? "You cannot like your own listing" : ""}
