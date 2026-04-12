@@ -6,35 +6,6 @@ import { Spinner } from "@/components/ui";
 import { getUserProfile } from "@/services";
 import { createReport, blockConversation } from "@/services";
 import { useEffect, useRef } from "react";
-  // Track previous messages length
-  const prevMessagesLength = useRef(messages.length);
-
-  // Request notification permission on mount
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  // Show notification for new messages
-  useEffect(() => {
-    if (!conversation || !user) return;
-    // Only notify if a new message is added and it's not from the current user
-    if (
-      messages.length > prevMessagesLength.current &&
-      messages[messages.length - 1]?.sender !== user.uid &&
-      document.visibilityState !== "visible" &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
-      const msg = messages[messages.length - 1];
-      new Notification(`New message from ${otherProfile?.username || "Chat"}`, {
-        body: msg.text,
-        icon: otherProfile?.avatarUrl || "/assets/maple-icon.png",
-      });
-    }
-    prevMessagesLength.current = messages.length;
-  }, [messages, user, conversation, otherProfile]);
 import type { UserProfile } from "@/types";
 import toast from "react-hot-toast";
 
@@ -79,6 +50,36 @@ export const ChatPage = () => {
     navigate("/chats");
     return null;
   }
+
+    // Track previous messages length
+  const prevMessagesLength = useRef(messages.length);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Show notification for new messages
+  useEffect(() => {
+    if (!conversation || !user) return;
+    // Only notify if a new message is added and it's not from the current user
+    if (
+      messages.length > prevMessagesLength.current &&
+      messages[messages.length - 1]?.sender !== user.uid &&
+      document.visibilityState !== "visible" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
+      const msg = messages[messages.length - 1];
+      new Notification(`New message from ${otherProfile?.username || "Chat"}`, {
+        body: msg.text,
+        icon: otherProfile?.avatarUrl || "/assets/maple-icon.png",
+      });
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages, user, conversation, otherProfile]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -208,17 +209,36 @@ export const ChatPage = () => {
                     : "bg-slate-700 text-slate-100 rounded-bl-md"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-                <p
-                  className={`text-[10px] mt-1 ${
-                    isMe ? "text-orange-200" : "text-slate-400"
-                  }`}
-                >
-                  {msg.timestamp?.toDate().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                <div className="flex flex-col items-end">
+                  <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                  <div className="flex items-center gap-1 mt-1 w-full justify-end">
+                    <span
+                      className={`text-[10px] ${isMe ? "text-orange-200" : "text-slate-400"}`}
+                    >
+                      {msg.timestamp?.toDate().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    {/* V icons - WhatsApp style */}
+                    {isMe ? (
+                      msg.status === "read" ? (
+                        <span style={{ display: "inline-flex", position: "relative", alignItems: "center" }}>
+                          {/* V כחול - שמאל */}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sky-400" style={{ position: "relative", zIndex: 2 }}><polyline points="20 6 9 17 4 12" /><polyline points="20 6 12 14 9 11" /></svg>
+                          {/* V אפור - ימין, overlap קטן יותר */}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300" style={{ position: "absolute", left: 4, top: 0, zIndex: 1 }}><polyline points="20 6 9 17 4 12" /><polyline points="20 6 12 14 9 11" /></svg>
+                        </span>
+                      ) : (
+                        // Single V gray (sent or default, or missing status)
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline text-slate-300"><polyline points="20 6 9 17 4 12" /></svg>
+                      )
+                    ) : (
+                      // תמיד V אפור גם להודעות של הצד השני (ליישור)
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline text-slate-700"><polyline points="20 6 9 17 4 12" /></svg>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           );

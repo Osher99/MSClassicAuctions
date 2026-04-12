@@ -73,10 +73,13 @@ export const useChatPage = (conversationId: string) => {
 
   // Mark as read when viewing
   useEffect(() => {
-    if (user && conversationId && conversation?.participants.includes(user.uid)) {
+    if (!user || !conversationId || !conversation || !Array.isArray(conversation.participants)) return;
+    if (conversation.participants.includes(user.uid)) {
       markConversationRead(conversationId, user.uid).catch((error) => {
         console.error("markConversationRead failed:", error);
       });
+    } else {
+      console.warn("[DEBUG] user.uid not in participants, skipping markConversationRead");
     }
   }, [conversationId, user, conversation, messages.length]);
 

@@ -27,6 +27,7 @@ export interface ChatMessage {
   sender: string;
   text: string;
   timestamp: Timestamp;
+  status?: "sent" | "delivered" | "read";
 }
 
 export interface Report {

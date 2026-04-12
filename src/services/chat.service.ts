@@ -106,6 +106,7 @@ export const sendMessage = async (
     sender: senderId,
     text: text.trim(),
     timestamp: now,
+    status: "sent",
   });
 
   // Update conversation metadata
@@ -177,6 +178,20 @@ export const markConversationRead = async (
   await updateDoc(convoRef, {
     [`unreadCount.${userId}`]: 0,
   });
+
+  // עדכן את כל ההודעות שלא נקראו ל-'read' עבור המשתמש
+  const messagesRef = collection(db, CONVERSATIONS_COLLECTION, conversationId, MESSAGES_SUBCOLLECTION);
+  // Firestore limitation: only one '!=' filter allowed. So we get all messages not read, then filter sender in JS
+  const q = query(messagesRef, where("status", "!=", "read"));
+  const snap = await getDocs(q);
+  const batch = (await import("firebase/firestore")).writeBatch(db);
+  snap.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.sender !== userId) {
+      batch.update(docSnap.ref, { status: "read" });
+    }
+  });
+  await batch.commit();
 };
 
 /** Block a conversation for both participants */
