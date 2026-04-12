@@ -37,7 +37,7 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <img src="/assets/maple-icon.png" alt="" className="w-7 h-7" />
+            <img src="/assets/free-market-logo.png" alt="Free Market Logo" className="w-10 h-10" />
             <span className="font-bold text-lg text-white group-hover:text-maple-orange transition-colors hidden sm:inline">
               MapleStory Classic Marketplace
             </span>

@@ -39,7 +39,7 @@ export const ListingsPage = () => {
   return (
     <div>
       <PageHeader
-        icon={<img src="/assets/maple-icon.png" alt="" className="w-8 h-8" />}
+        icon={<img src="/assets/free-market-logo.png" alt="" className="w-8 h-8" />}
         title="Marketplace"
         subtitle="Browse MapleStory Classic items for sale"
       />
