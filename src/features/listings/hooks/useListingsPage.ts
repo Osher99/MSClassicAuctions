@@ -38,8 +38,23 @@ const sortListings = (listings: ReturnType<typeof useListings>["data"], sort: So
       return sorted.sort((a, b) => a.price - b.price);
     case "price-desc":
       return sorted.sort((a, b) => b.price - a.price);
-    case "category":
-      return sorted.sort((a, b) => a.overallCategory.localeCompare(b.overallCategory) || a.itemName.localeCompare(b.itemName));
+    case "category": {
+      // Custom order: Equip, Use, Etc, then others
+      const categoryOrder = (cat: string) => {
+        const c = cat.toLowerCase();
+        if (c === "equip") return 0;
+        if (c === "use") return 1;
+        if (c === "etc") return 2;
+        return 3;
+      };
+      return sorted.sort((a, b) => {
+        const aOrder = categoryOrder(a.overallCategory);
+        const bOrder = categoryOrder(b.overallCategory);
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        // If same group, sort by itemName
+        return a.itemName.localeCompare(b.itemName);
+      });
+    }
     default:
       return sorted;
   }
