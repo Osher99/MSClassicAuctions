@@ -214,9 +214,16 @@ export const ListingForm = ({
             label="Price (Mesos)"
             type="number"
             value={form.price || ""}
-            onChange={(e) => update("price", Number(e.target.value))}
+            onChange={(e) => {
+              let value = Number(e.target.value);
+              if (isNaN(value)) value = 0;
+              if (value < 0) value = 0;
+              if (value > 2147483647) value = 2147483647;
+              update("price", value);
+            }}
             placeholder="1,000,000"
             min={0}
+            max={2147483647}
             required
           />
 
@@ -226,9 +233,16 @@ export const ListingForm = ({
               label="Amount"
               type="number"
               value={form.amount || ""}
-              onChange={(e) => update("amount", Number(e.target.value))}
+              onChange={(e) => {
+                let value = Number(e.target.value);
+                if (isNaN(value)) value = 1;
+                if (value < 1) value = 1;
+                if (value > 9999) value = 9999;
+                update("amount", value);
+              }}
               placeholder="1"
               min={1}
+              max={9999}
             />
           )}
 
