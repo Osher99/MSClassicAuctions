@@ -5,7 +5,36 @@ import { useAuth } from "@/features/auth";
 import { Spinner } from "@/components/ui";
 import { getUserProfile } from "@/services";
 import { createReport, blockConversation } from "@/services";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+  // Track previous messages length
+  const prevMessagesLength = useRef(messages.length);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Show notification for new messages
+  useEffect(() => {
+    if (!conversation || !user) return;
+    // Only notify if a new message is added and it's not from the current user
+    if (
+      messages.length > prevMessagesLength.current &&
+      messages[messages.length - 1]?.sender !== user.uid &&
+      document.visibilityState !== "visible" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
+      const msg = messages[messages.length - 1];
+      new Notification(`New message from ${otherProfile?.username || "Chat"}`, {
+        body: msg.text,
+        icon: otherProfile?.avatarUrl || "/assets/maple-icon.png",
+      });
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages, user, conversation, otherProfile]);
 import type { UserProfile } from "@/types";
 import toast from "react-hot-toast";
 
