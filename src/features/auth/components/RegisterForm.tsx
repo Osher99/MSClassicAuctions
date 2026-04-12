@@ -82,19 +82,21 @@ export const RegisterForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="new-password"
+            />
+            <Input
+              label="Verify Password"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
             />
             <p className="mt-1.5 text-xs text-amber-400/80 flex items-center gap-1">
               <span>⚠️</span> Do not use your MapleStory password here. Use a unique password for this site.
             </p>
           </div>
-          <Input
-            label="Confirm Password"
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
           <Button type="submit" loading={loading} className="w-full">
             Create Account
           </Button>
