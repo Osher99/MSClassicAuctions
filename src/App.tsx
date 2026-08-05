@@ -11,6 +11,7 @@ import {
 } from "@/features/listings";
 import { AdminPage } from "@/features/admin";
 import { ChatListPage, ChatPage } from "@/features/chat";
+import { AboutPage } from "@/features/about";
 
 export const App = () => (
   <Layout>
@@ -87,6 +88,7 @@ export const App = () => (
             </AdminRoute>
           }
         />
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
     </Layout>
 );

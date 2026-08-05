@@ -16,7 +16,7 @@ interface ListingFormProps {
 }
 
 const serverOptions = MAPLE_SERVERS.map((s) => ({ value: s, label: s }));
-const MAX_LISTING_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_LISTING_IMAGE_SIZE_BYTES = 1 * 1024 * 1024;
 const ALLOWED_LISTING_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export const ListingForm = ({
@@ -76,7 +76,7 @@ export const ListingForm = ({
     }
 
     if (file.size > MAX_LISTING_IMAGE_SIZE_BYTES) {
-      toast.error("Screenshot must be 2MB or smaller.");
+      toast.error("Screenshot must be 1MB or smaller.");
       e.target.value = "";
       return;
     }
@@ -187,7 +187,7 @@ export const ListingForm = ({
               onChange={handleImageChange}
               className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-maple-orange file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-maple-orange-dark"
             />
-            <p className="text-xs text-slate-500">Accepted: JPG, PNG, WEBP. Max 2MB.</p>
+            <p className="text-xs text-slate-500">Accepted: JPG, PNG, WEBP. Max 1MB.</p>
             {hasListingImage && (
               <div className="space-y-3">
                 <img
@@ -210,6 +210,7 @@ export const ListingForm = ({
             rows={3}
           />
 
+
           <Input
             label="Price (Mesos)"
             type="number"
@@ -226,6 +227,7 @@ export const ListingForm = ({
             max={2147483647}
             required
           />
+          <p className="text-xs text-slate-500 mt-1">Maximum price: 2,147,483,647 Mesos</p>
 
           {/* Amount – non-Equip only */}
           {form.overallCategory && form.overallCategory !== "Equip" && (

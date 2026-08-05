@@ -48,6 +48,9 @@ export const Navbar = () => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-4">
+            <Link to="/about">
+              <Button variant="secondary" size="sm">About</Button>
+            </Link>
             {user ? (
               <>
                 <Link to="/liked-listings">
@@ -151,6 +154,13 @@ export const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden border-t border-maple-border bg-maple-dark/95 backdrop-blur-md">
           <div className="px-4 py-4 space-y-3">
+            <Link
+              to="/about"
+              onClick={closeMobile}
+              className="block"
+            >
+              <Button variant="secondary" className="w-full">About</Button>
+            </Link>
             {user ? (
               <>
                 <Link
