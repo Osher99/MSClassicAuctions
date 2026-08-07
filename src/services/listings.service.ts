@@ -56,6 +56,10 @@ const prepareListingUpdateData = (data: Partial<ListingFormData>): Record<string
     nextData.sellerIgn = deleteField();
   }
 
+  if ("currentOffer" in data && !data.currentOffer) {
+    nextData.currentOffer = deleteField();
+  }
+
   if ("listingImageUrl" in nextData && !nextData.listingImageUrl) {
     nextData.listingImageUrl = deleteField();
   }

@@ -12,6 +12,7 @@ import {
 import { AdminPage } from "@/features/admin";
 import { ChatListPage, ChatPage } from "@/features/chat";
 import { AboutPage } from "@/features/about";
+import { WishlistPage } from "@/features/wishlist";
 
 export const App = () => (
   <Layout>
@@ -61,6 +62,14 @@ export const App = () => (
           element={
             <ProtectedRoute>
               <UserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <WishlistPage />
             </ProtectedRoute>
           }
         />

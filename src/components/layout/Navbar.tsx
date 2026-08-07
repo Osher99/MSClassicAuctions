@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth";
 import { useUnreadCount } from "@/features/chat";
+import { useWishlist } from "@/features/wishlist";
 import { logOut } from "@/services";
 import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
@@ -11,6 +12,8 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const unreadCount = useUnreadCount();
+  const { matchingListings } = useWishlist();
+  const wishlistMatchCount = matchingListings.length;
 
   const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
@@ -55,6 +58,14 @@ export const Navbar = () => {
               <>
                 <Link to="/liked-listings">
                   <Button variant="secondary" size="sm">Liked Listings</Button>
+                </Link>
+                <Link to="/wishlist" className="relative">
+                  <Button variant="secondary" size="sm">⭐ Wishlist</Button>
+                  {wishlistMatchCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 pointer-events-none">
+                      {wishlistMatchCount > 99 ? "99+" : wishlistMatchCount}
+                    </span>
+                  )}
                 </Link>
                 <Link to="/my-listings">
                   <Button variant="secondary" size="sm">My Listings</Button>
@@ -169,6 +180,20 @@ export const Navbar = () => {
                   className="block"
                 >
                   <Button variant="secondary" className="w-full">Liked Listings</Button>
+                </Link>
+                <Link
+                  to="/wishlist"
+                  onClick={closeMobile}
+                  className="block"
+                >
+                  <Button variant="secondary" className="w-full">
+                    ⭐ Wishlist
+                    {wishlistMatchCount > 0 && (
+                      <span className="ml-2 bg-green-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                        {wishlistMatchCount > 99 ? "99+" : wishlistMatchCount}
+                      </span>
+                    )}
+                  </Button>
                 </Link>
                 <Link
                   to="/my-listings"

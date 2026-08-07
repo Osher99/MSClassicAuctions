@@ -144,6 +144,10 @@ export const ListingForm = ({
               <img
                 src={getItemIconUrl(selectedItem.id)}
                 alt={selectedItem.name}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.style.visibility = "hidden";
+                }}
                 className="w-16 h-16 object-contain"
               />
               <div>
@@ -228,6 +232,27 @@ export const ListingForm = ({
             required
           />
           <p className="text-xs text-slate-500 mt-1">Maximum price: 2,147,483,647 Mesos</p>
+
+          <Input
+            label="Current Offer (Mesos)"
+            type="number"
+            value={form.currentOffer || ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (!raw) {
+                update("currentOffer", undefined);
+                return;
+              }
+              let value = Number(raw);
+              if (isNaN(value)) return;
+              if (value < 0) value = 0;
+              if (value > 2147483647) value = 2147483647;
+              update("currentOffer", value);
+            }}
+            placeholder="Optional — the best offer you've received so far"
+            min={0}
+            max={2147483647}
+          />
 
           {/* Amount – non-Equip only */}
           {form.overallCategory && form.overallCategory !== "Equip" && (

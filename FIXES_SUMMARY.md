@@ -1,5 +1,9 @@
 # Firebase Cloud Functions - Fix Summary
 
+> For current deployment status, secrets, and known gotchas, see
+> [`STATE.md`](STATE.md) — this file is a point-in-time summary from
+> when these fixes were first written, not a live status page.
+
 ## 🔧 Issues Fixed
 
 ### 1. CORS Errors (403 Forbidden)
@@ -72,7 +76,9 @@ firebase deploy --only hosting
 
 ## ⚙️ Local Development Setup
 
-1. Create `.env.local` in the project root:
+1. Create `.env.development.local` in the project root (not `.env.local`
+   — that file is also loaded for production builds, so dev-only values
+   there would get bundled into what you deploy):
 ```env
 VITE_FUNCTIONS_BASE_URL=http://localhost:5001
 VITE_FIREBASE_API_KEY=your_api_key
@@ -146,9 +152,11 @@ if (res.ok) {
 ## 📚 Troubleshooting
 
 If you get **403 Forbidden**:
-1. Check if secrets are deployed: `firebase functions:secrets:list`
-2. Verify secrets are correct
-3. Redeploy: `firebase deploy --only functions`
+1. Check billing is enabled: `gcloud billing projects describe <project-id>`
+2. Check the function has public invoker access: `gcloud functions get-iam-policy <fn> --region=us-central1` (empty bindings = not publicly callable; this gets stripped if billing is ever disabled and isn't restored automatically)
+3. Check if secrets are deployed: `firebase functions:secrets:list`
+4. Verify secrets are correct
+5. Redeploy: `firebase deploy --only functions`
 
 If you get **CORS errors**:
 1. Check your localhost port matches one of the allowed origins

@@ -186,6 +186,12 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
           )}
         </div>
         <PriceTag amount={listing.price} size="sm" />
+        {listing.currentOffer != null && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-400">Current Offer:</span>
+            <PriceTag amount={listing.currentOffer} size="sm" />
+          </div>
+        )}
         {listing.description && (
           <p className="text-slate-400 text-sm line-clamp-2 leading-relaxed">
             {listing.description}

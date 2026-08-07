@@ -14,6 +14,8 @@ export interface MapleItemResult {
     subCategory: string;
     lowItemId: number;
     highItemId: number;
+    /** e.g. "1H Sword", "Claw" — only present when subCategory is "Weapon" */
+    weaponType?: string;
   };
 }
 
@@ -50,6 +52,8 @@ export interface Listing {
   // Listing details
   description: string;
   price: number;
+  /** Current best offer the seller has received, kept up to date by them */
+  currentOffer?: number;
   server: string;
 
   // Store info

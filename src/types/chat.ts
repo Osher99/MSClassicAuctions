@@ -15,6 +15,8 @@ export interface Conversation {
   lastMessageSender: string;
   /** Map of participant uid → number of unread messages */
   unreadCount: Record<string, number>;
+  /** Map of participant uid → epoch ms of their last keystroke while typing, or null once cleared */
+  typing?: Record<string, number | null>;
   blocked?: boolean;
   blockedBy?: string;
   blockedAt?: Timestamp;

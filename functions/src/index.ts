@@ -144,6 +144,43 @@ export const contactForm = onRequest(
   }
 );
 
+// 📊 Marketplace Stats (HTTP) — public counts for the homepage stats section
+export const getMarketplaceStats = onRequest(
+  { maxInstances: MAX_INSTANCES },
+  async (req, res) => {
+    if (req.method === "OPTIONS") {
+      setCorsHeaders(req, res);
+      res.status(204).send("");
+      return;
+    }
+    setCorsHeaders(req, res);
+
+    try {
+      const db = admin.firestore();
+      const [usersCount, totalListingsCount, activeListingsSnap] = await Promise.all([
+        db.collection("users").count().get(),
+        db.collection("listings").count().get(),
+        db.collection("listings").where("isActive", "==", true).get(),
+      ]);
+
+      const now = Date.now();
+      const activeListings = activeListingsSnap.docs.filter((d) => {
+        const expiresAt = d.data().expiresAt as admin.firestore.Timestamp | undefined;
+        return expiresAt && expiresAt.toMillis() > now;
+      }).length;
+
+      res.status(200).json({
+        users: usersCount.data().count,
+        totalListings: totalListingsCount.data().count,
+        activeListings,
+      });
+    } catch (error) {
+      console.error("getMarketplaceStats error:", error);
+      res.status(500).json({ error: "Failed to load stats" });
+    }
+  }
+);
+
 // 👤 New User Trigger (sends welcome email when user signs up)
 // Fires on Firestore user-profile creation instead of the Auth event —
 // v2 blocking auth triggers (beforeUserCreated) require upgrading the

@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useListingsPage } from "../hooks/useListingsPage";
-import { SORT_OPTIONS } from "../hooks/useListingsPage";
+import { SORT_OPTIONS, CATEGORY_FILTER_GROUPS } from "../hooks/useListingsPage";
 import { ListingGrid } from "../components/ListingGrid";
+import { MarketplaceStatsSection } from "../components/MarketplaceStatsSection";
+import { CategoryFilterMenu } from "../components/CategoryFilterMenu";
 import { Spinner, Input, PageHeader, Button } from "@/components/ui";
 
 export const ListingsPage = () => {
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
   const {
     isLoading,
     search,
     setSearch,
+    categoryFilters,
+    toggleCategoryFilter,
     sortBy,
     setSortBy,
     paginated,
@@ -30,6 +36,9 @@ export const ListingsPage = () => {
       if (!sortMenuRef.current?.contains(event.target as Node)) {
         setSortOpen(false);
       }
+      if (!filterMenuRef.current?.contains(event.target as Node)) {
+        setFilterOpen(false);
+      }
     };
 
     window.addEventListener("mousedown", onPointerDown);
@@ -44,12 +53,14 @@ export const ListingsPage = () => {
         subtitle="Browse MapleStory Classic items for sale"
       />
 
+      <MarketplaceStatsSection />
+
       {/* Filters */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1 relative">
           <Input
             className="pr-11"
-            placeholder="Search items..."
+            placeholder="Search listings..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -67,6 +78,31 @@ export const ListingsPage = () => {
             </button>
           )}
         </div>
+
+        <div className="relative shrink-0" ref={filterMenuRef}>
+          <button
+            type="button"
+            onClick={() => setFilterOpen((prev) => !prev)}
+            className={`h-[42px] px-3 rounded-lg border transition-colors text-sm font-medium ${
+              categoryFilters.size > 0
+                ? "bg-maple-orange border-maple-orange text-white"
+                : "bg-slate-800 border-maple-border text-slate-200 hover:text-white hover:border-maple-orange/60"
+            }`}
+            aria-haspopup="menu"
+            aria-expanded={filterOpen}
+          >
+            Filter{categoryFilters.size > 0 ? ` (${categoryFilters.size})` : ""}
+          </button>
+
+          {filterOpen && (
+            <CategoryFilterMenu
+              groups={CATEGORY_FILTER_GROUPS}
+              selected={categoryFilters}
+              onToggle={toggleCategoryFilter}
+            />
+          )}
+        </div>
+
         <div className="relative shrink-0" ref={sortMenuRef}>
           <button
             type="button"

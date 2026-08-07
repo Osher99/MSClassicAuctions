@@ -1,9 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useListingDetailPage } from "../hooks/useListingDetailPage";
-import { useListingLike } from "../hooks/useListingLike";
-import { useStartChat } from "@/features/chat";
-import { useAuth } from "@/features/auth";
 import {
   Button,
   Spinner,
@@ -14,7 +10,6 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
-import toast from "react-hot-toast";
 
 const statLabels: Record<string, string> = {
   str: "STR",
@@ -33,54 +28,23 @@ const statLabels: Record<string, string> = {
 };
 
 export const ListingDetailPage = () => {
-  const { listing, isLoading, isOwner, activeStats, handleDelete, isDeleting } =
-    useListingDetailPage();
-  const [showImageModal, setShowImageModal] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { startChat, loading: chatLoading } = useStartChat();
-  const { liked, likeCount, toggle } = useListingLike(listing?.id ?? "");
-  const isOwnerListing = user && listing && user.uid === listing.userId;
-
-  const handleContactSeller = useCallback(async () => {
-    if (!listing) return;
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (!listing.userId || listing.userId === user.uid) {
-      toast.error("Unable to start chat for this listing");
-      return;
-    }
-
-    try {
-      const conversationId = await startChat(listing.userId, {
-        id: listing.id,
-        itemName: listing.itemName,
-        itemIconUrl: listing.itemIconUrl,
-        price: listing.price,
-        server: listing.server,
-      });
-      if (conversationId) {
-        navigate(`/chats/${conversationId}`);
-      }
-    } catch {
-      toast.error("Could not open chat right now. Please try again.");
-    }
-  }, [listing, user, startChat, navigate]);
-
-  // Close modal on ESC key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowImageModal(false);
-      }
-    };
-    if (showImageModal) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }
-  }, [showImageModal]);
+  const {
+    listing,
+    isLoading,
+    isOwner,
+    activeStats,
+    handleDelete,
+    isDeleting,
+    chatLoading,
+    handleContactSeller,
+    liked,
+    likeCount,
+    toggleLike,
+    showImageModal,
+    setShowImageModal,
+    whisperCopied,
+    handleCopyWhisper,
+  } = useListingDetailPage();
 
   if (isLoading) return <Spinner />;
 
@@ -134,6 +98,12 @@ export const ListingDetailPage = () => {
                 {listing.itemName}
               </h1>
               <PriceTag amount={listing.price} size="lg" />
+              {listing.currentOffer != null && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-sm text-slate-400">Current Offer:</span>
+                  <PriceTag amount={listing.currentOffer} size="md" />
+                </div>
+              )}
               {listing.amount != null && listing.amount > 1 && (
                 <span className="text-sm text-slate-300 font-medium mt-1">
                   Quantity: <span className="text-maple-gold font-bold">x{listing.amount}</span>
@@ -196,7 +166,13 @@ export const ListingDetailPage = () => {
           {/* Store Info */}
           {listing.isInStore && (
             <div className="bg-slate-800/50 border border-maple-border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-maple-orange mb-2">🏪 In Store Now</h2>
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-maple-orange mb-2">
+                🏪 In Store Now
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+              </h2>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 {listing.storeChannel && (
                   <div>
@@ -217,6 +193,20 @@ export const ListingDetailPage = () => {
                   </div>
                 )}
               </div>
+              {listing.sellerIgn && (
+                <button
+                  type="button"
+                  onClick={handleCopyWhisper}
+                  className={`mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    whisperCopied
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-maple-orange/15 text-maple-orange hover:bg-maple-orange/25"
+                  }`}
+                  title="Copies an in-game /whisper command — paste it in MapleStory's chat"
+                >
+                  {whisperCopied ? "✓ Copied! Paste it in-game" : "📋 Copy Whisper Command"}
+                </button>
+              )}
             </div>
           )}
 
@@ -277,7 +267,7 @@ export const ListingDetailPage = () => {
           {/* Share */}
           <div>
             <h2 className="text-sm font-semibold text-slate-400 mb-2">📤 Share this listing</h2>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-2">
             <a
               href={`https://wa.me/?text=${encodeURIComponent(`${listing.itemName} - ${listing.price.toLocaleString()} Mesos on ${listing.server}\n${window.location.href}`)}`}
               target="_blank"
@@ -301,11 +291,11 @@ export const ListingDetailPage = () => {
               Facebook
             </a>
             <button
-              onClick={toggle}
-              disabled={!!isOwnerListing}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart ${isOwnerListing ? "opacity-40 cursor-not-allowed" : ""}`}
-              aria-label={isOwnerListing ? "Cannot like your own listing" : liked ? "Unlike" : "Like"}
-              title={isOwnerListing ? "You cannot like your own listing" : ""}
+              onClick={toggleLike}
+              disabled={!!isOwner}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors text-sm font-medium group/heart ${isOwner ? "opacity-40 cursor-not-allowed" : ""}`}
+              aria-label={isOwner ? "Cannot like your own listing" : liked ? "Unlike" : "Like"}
+              title={isOwner ? "You cannot like your own listing" : ""}
             >
               <svg
                 className={`w-4 h-4 transition-all duration-200 ${liked ? "text-red-500 scale-110" : "text-red-400 group-hover/heart:text-red-300"}`}

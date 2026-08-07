@@ -1,11 +1,17 @@
 # 🚀 Quick Start - Deploy Your Fixed Functions
 
+> For current deployment status, secrets, and known gotchas, see
+> [`STATE.md`](STATE.md) — this file is a setup walkthrough, not a
+> live status page.
+
 ## What Was Fixed ✅
 
 1. **CORS Errors (403)** - Fixed improper CORS header handling
 2. **Missing Secrets** - Added validation and clear error messages  
 3. **Development/Production URL Mismatch** - Created flexible endpoint routing
-4. **Email Welcome System** - Fixed notifyOnUserCreate function with proper error handling
+4. **Email Welcome System** - `notifyOnUserCreate` now fires on the
+   `users/{userId}` Firestore write instead of a v2 blocking auth
+   trigger (which needs Google Cloud Identity Platform — see `STATE.md`)
 
 ---
 
@@ -45,7 +51,9 @@ firebase deploy --only hosting
 
 ## 🧪 Test It Locally
 
-1. Create `.env.local` in your project root:
+1. Create `.env.development.local` in your project root (NOT `.env.local`
+   — Vite loads `.env.local` in production builds too, so dev-only
+   placeholder values belong in the mode-scoped file):
 ```env
 VITE_FUNCTIONS_BASE_URL=http://localhost:5001
 ```
@@ -97,15 +105,24 @@ Gmail via Nodemailer
 ## ❓ Common Issues & Solutions
 
 ### "403 Forbidden" Error
-```bash
-# Check if secrets are deployed
-firebase functions:secrets:list
+This is usually **not** a secrets or CORS problem — it means the
+request never reached your code. Two real causes we've hit:
 
-# If not, set them again
+1. **Billing disabled on the project.** Cloud Functions stop serving
+   entirely (503, then 403) if the Blaze plan billing account gets
+   disconnected. Check: `gcloud billing projects describe <project-id>`.
+2. **Missing public invoker permission.** When billing gets re-enabled
+   after being disabled, Google does NOT automatically restore the
+   `allUsers` invoker role on HTTP functions. Check:
+   `gcloud functions get-iam-policy contactForm --region=us-central1`
+   — if bindings are empty, restore with:
+   `gcloud functions add-invoker-policy-binding contactForm --region=us-central1 --member=allUsers`
+
+Only after ruling those out is it worth checking secrets:
+```bash
+firebase functions:secrets:list
 firebase functions:secrets:set EMAIL_USER
 firebase functions:secrets:set EMAIL_PASS
-
-# Redeploy
 firebase deploy --only functions
 ```
 

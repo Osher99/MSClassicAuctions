@@ -16,4 +16,6 @@ export interface UserProfile {
   role?: UserRole;
   status?: UserStatus;
   createdAt: number;
+  /** Item IDs the user wants to be notified about (max 5) */
+  wishlistItemIds?: number[];
 }

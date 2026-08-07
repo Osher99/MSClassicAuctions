@@ -1,7 +1,15 @@
-import { useState, useEffect, useRef } from "react";
-import { searchItems, getItemIconUrl } from "@/services/maplestory.service";
+import { getItemIconUrl } from "@/services/itemsData.service";
 import type { MapleItemResult } from "@/types";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
+import { useItemSearchDropdown } from "../hooks/useItemSearchDropdown";
+
+const FALLBACK_ICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23475569'%3E%3Crect width='24' height='24' rx='4'/%3E%3C/svg%3E";
+
+const handleIconError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  e.currentTarget.onerror = null;
+  e.currentTarget.src = FALLBACK_ICON;
+};
 
 interface ItemSearchProps {
   onSelect: (item: MapleItemResult) => void;
@@ -10,12 +18,8 @@ interface ItemSearchProps {
 }
 
 export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps) => {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<MapleItemResult[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const { query, setQuery, results, isOpen, setIsOpen, loading, wrapperRef } =
+    useItemSearchDropdown();
   const selectedRequirementLabel = selectedItem
     ? getItemRequirementLabel({
         name: selectedItem.name,
@@ -26,44 +30,6 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
         desc: selectedItem.desc,
       })
     : null;
-
-  useEffect(() => {
-    if (query.length < 3) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const items = await searchItems(query);
-        setResults(items);
-        setIsOpen(true);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleSelect = (item: MapleItemResult) => {
     onSelect(item);
@@ -80,6 +46,7 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
           <img
             src={getItemIconUrl(selectedItem.id)}
             alt={selectedItem.name}
+            onError={handleIconError}
             className="w-10 h-10 object-contain"
           />
           <div className="flex-1 min-w-0">
@@ -114,7 +81,7 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Type at least 3 characters to search..."
+          placeholder="Type at least 2 characters to search..."
           className="w-full px-4 py-2.5 bg-slate-800 border border-maple-border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-maple-orange/50 focus:border-maple-orange transition-all"
         />
         {loading && (
@@ -147,6 +114,7 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
                   <img
                     src={getItemIconUrl(item.id)}
                     alt={item.name}
+                    onError={handleIconError}
                     className="w-8 h-8 object-contain flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
@@ -163,7 +131,7 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
         </div>
       )}
 
-      {isOpen && results.length === 0 && !loading && query.length >= 3 && (
+      {isOpen && results.length === 0 && !loading && query.length >= 2 && (
         <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-maple-border rounded-lg p-3 text-slate-400 text-sm text-center">
           No items found
         </div>

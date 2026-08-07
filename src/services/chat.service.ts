@@ -169,6 +169,27 @@ export const getConversation = async (
     : null;
 };
 
+/** Subscribe to a single conversation (real-time) */
+export const subscribeToConversation = (
+  conversationId: string,
+  callback: (conversation: Conversation | null) => void
+): Unsubscribe => {
+  const convoRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  return onSnapshot(convoRef, (snap) => {
+    callback(snap.exists() ? ({ id: snap.id, ...snap.data() } as Conversation) : null);
+  });
+};
+
+/** Record that a user is (or has stopped) typing in a conversation */
+export const setTypingStatus = async (
+  conversationId: string,
+  userId: string,
+  isTyping = true
+): Promise<void> => {
+  const convoRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
+  await updateDoc(convoRef, { [`typing.${userId}`]: isTyping ? Date.now() : null });
+};
+
 /** Mark all messages as read for a user in a conversation */
 export const markConversationRead = async (
   conversationId: string,

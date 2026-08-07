@@ -1,21 +1,9 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
 import { useChatPage } from "../hooks/useChat";
-import { useAuth } from "@/features/auth";
-import { Spinner } from "@/components/ui";
-import { getUserProfile } from "@/services";
-import { createReport, blockConversation } from "@/services";
-import { useEffect, useRef } from "react";
-import type { UserProfile } from "@/types";
-import toast from "react-hot-toast";
+import { Spinner, Button } from "@/components/ui";
 
 export const ChatPage = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const navigate = useNavigate();
-  const { user, profile } = useAuth();
-
-  if (!conversationId) return null;
-
   const {
     conversation,
     messages,
@@ -23,95 +11,23 @@ export const ChatPage = () => {
     input,
     setInput,
     handleSend,
+    handleKeyDown,
     sending,
     currentUserId,
-    otherParticipantId,
+    otherTyping,
+    notifyTyping,
     messagesEndRef,
-  } = useChatPage(conversationId);
+    otherProfile,
+    currentProfile,
+    showReport,
+    setShowReport,
+    reportReason,
+    setReportReason,
+    reportSending,
+    handleReport,
+  } = useChatPage(conversationId ?? "");
 
-  const [otherProfile, setOtherProfile] = useState<UserProfile | null>(null);
-  const [showReport, setShowReport] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [reportSending, setReportSending] = useState(false);
-
-  useEffect(() => {
-    if (otherParticipantId) {
-      getUserProfile(otherParticipantId).then(setOtherProfile);
-    }
-  }, [otherParticipantId]);
-
-  // Verify user is participant (admins can still inspect for moderation)
-  if (
-    conversation &&
-    user &&
-    !conversation.participants.includes(user.uid) &&
-    profile?.role !== "admin"
-  ) {
-    navigate("/chats");
-    return null;
-  }
-
-    // Track previous messages length
-  const prevMessagesLength = useRef(messages.length);
-
-  // Request notification permission on mount
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  // Show notification for new messages
-  useEffect(() => {
-    if (!conversation || !user) return;
-    // Only notify if a new message is added and it's not from the current user
-    if (
-      messages.length > prevMessagesLength.current &&
-      messages[messages.length - 1]?.sender !== user.uid &&
-      document.visibilityState !== "visible" &&
-      "Notification" in window &&
-      Notification.permission === "granted"
-    ) {
-      const msg = messages[messages.length - 1];
-      new Notification(`New message from ${otherProfile?.username || "Chat"}`, {
-        body: msg.text,
-        icon: otherProfile?.avatarUrl || "/assets/maple-icon.png",
-      });
-    }
-    prevMessagesLength.current = messages.length;
-  }, [messages, user, conversation, otherProfile]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleReport = useCallback(async () => {
-    if (!reportReason.trim() || !user || !profile || !otherProfile || !conversationId) return;
-    setReportSending(true);
-    try {
-      await createReport({
-        reporterId: user.uid,
-        reporterUsername: profile.username,
-        reportedUserId: otherParticipantId,
-        reportedUsername: otherProfile.username,
-        conversationId,
-        reason: reportReason.trim(),
-      });
-      await blockConversation(conversationId, user.uid, reportReason.trim());
-      toast.success("Report submitted. This chat is now blocked for both users.");
-      setShowReport(false);
-      setReportReason("");
-    } catch {
-      toast.error("Failed to submit report and block");
-    } finally {
-      setReportSending(false);
-    }
-  }, [reportReason, user, profile, otherProfile, conversationId, otherParticipantId]);
-
-  if (!conversation || messagesLoading) {
+  if (!conversationId || !conversation || messagesLoading) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
         <Spinner />
@@ -149,7 +65,7 @@ export const ChatPage = () => {
             <span className="text-sm text-slate-400">Loading...</span>
           )}
         </div>
-        {profile?.role !== "admin" && !conversation.blocked && (
+        {currentProfile?.role !== "admin" && !conversation.blocked && (
           <button
             onClick={() => setShowReport(true)}
             className="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10"
@@ -203,13 +119,13 @@ export const ChatPage = () => {
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                className={`min-w-0 max-w-[75%] rounded-2xl px-4 py-2 ${
                   isMe
                     ? "bg-maple-orange text-white rounded-br-md"
                     : "bg-slate-700 text-slate-100 rounded-bl-md"
                 }`}
               >
-                <div className="flex flex-col items-end">
+                <div className="min-w-0 flex flex-col items-end">
                   <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
                   <div className="flex items-center gap-1 mt-1 w-full justify-end">
                     <span
@@ -243,6 +159,15 @@ export const ChatPage = () => {
             </div>
           );
         })}
+        {otherTyping && (
+          <div className="flex justify-start">
+            <div className="bg-slate-700 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce" />
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -256,7 +181,10 @@ export const ChatPage = () => {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              notifyTyping();
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             maxLength={1000}
@@ -298,19 +226,18 @@ export const ChatPage = () => {
               className="w-full bg-slate-800 border border-maple-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-maple-orange transition-colors resize-none"
             />
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowReport(false)}
-                className="flex-1 px-4 py-2 text-sm rounded-lg border border-maple-border text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-              >
+              <Button variant="secondary" className="flex-1" onClick={() => setShowReport(false)}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
                 onClick={handleReport}
                 disabled={!reportReason.trim() || reportSending}
-                className="flex-1 px-4 py-2 text-sm rounded-lg bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white font-medium transition-colors"
+                loading={reportSending}
               >
-                {reportSending ? "Submitting..." : "Submit Report & Block"}
-              </button>
+                Submit Report & Block
+              </Button>
             </div>
           </div>
         </div>

@@ -1,5 +1,9 @@
 # Cloud Functions Setup Guide
 
+> For current deployment status, secrets, and known gotchas, see
+> [`STATE.md`](STATE.md) — this file is a setup walkthrough, not a
+> live status page.
+
 This guide explains how to configure and deploy the Firebase Cloud Functions for email notifications.
 
 ## 📧 Email Functions
@@ -31,19 +35,12 @@ Follow Google's guide to create an App Password:
 Deploy the secrets to Firebase Cloud Functions:
 
 ```bash
-# Navigate to functions directory
-cd functions
-
-# Set the email address
-firebase functions:config:set email.user="your-email@gmail.com"
-
-# Set the app password
-firebase functions:config:set email.pass="your-16-character-app-password"
-
-# Or using Firebase Secrets (v2 runtime - recommended):
 firebase functions:secrets:set EMAIL_USER
 firebase functions:secrets:set EMAIL_PASS
 ```
+(`firebase functions:config:set` is the old v1 config API — this
+project's functions are v2 and only read secrets via `defineSecret`,
+so `functions:config:set` has no effect here. Don't use it.)
 
 When prompted, paste:
 - **EMAIL_USER**: Your Gmail address (e.g., `noreply@yourdomain.com`)
@@ -110,11 +107,15 @@ To add more origins, edit `functions/src/index.ts` in the `allowedOrigins` array
 
 ## 📝 Frontend Configuration
 
-### Development (.env.local)
+### Development (.env.development.local)
 
 ```env
 VITE_FUNCTIONS_BASE_URL=http://localhost:5001
 ```
+
+Use `.env.development.local`, not `.env.local` — Vite loads `.env.local`
+in production builds too, which would bake dev/placeholder values into
+what you deploy.
 
 ### Production
 
@@ -123,21 +124,29 @@ The frontend uses Firebase Hosting rewrites to call `/contactForm`, which gets r
 ## 🐛 Troubleshooting
 
 ### 403 Forbidden Error
-- Secrets are not deployed or not accessible
-- Solution: Run `firebase functions:secrets:set` again and redeploy
+Usually means the request never reached the function at all — check
+in this order:
+1. Billing enabled on the project? (`gcloud billing projects describe <project-id>`)
+2. Public invoker permission present? (`gcloud functions get-iam-policy <fn> --region=us-central1` — empty bindings means `allUsers` isn't granted; billing outages strip this and it isn't auto-restored)
+3. Only then: secrets not deployed/accessible — `firebase functions:secrets:set` again and redeploy
 
 ### CORS Error
 - Origin not in allowed list
 - Solution: Add your origin to `allowedOrigins` in functions/src/index.ts
 
-### Emails Not Sending
-- Gmail credentials incorrect
-- Gmail account has security restrictions
-- Solution: 
-  1. Create a new Gmail account or use an existing one
-  2. Enable 2-factor authentication
-  3. Create an app password (not your Gmail password)
-  4. Update the secrets with correct credentials
+### Emails Not Sending (SMTP `Invalid login` / 535 error)
+- The app password must belong to the **exact** Gmail account in
+  `EMAIL_USER` — generating it while logged into a different Google
+  account (e.g. your personal one) produces a password that
+  authenticates fine but gets rejected for this account
+- That account needs 2-Step Verification turned on before
+  `myaccount.google.com/apppasswords` is even reachable — if it says
+  "The setting you are looking for is not available for your account",
+  that's why
+- After rotating the secret, you must redeploy
+  (`firebase deploy --only functions`) — functions keep running on the
+  secret *version* they were deployed with, they don't pick up a new
+  value automatically
 
 ### Function Timeout
 - Email service is slow or not responding

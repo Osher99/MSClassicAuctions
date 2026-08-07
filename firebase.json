@@ -19,6 +19,10 @@
         "function": "contactForm"
       },
       {
+        "source": "/getMarketplaceStats",
+        "function": "getMarketplaceStats"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

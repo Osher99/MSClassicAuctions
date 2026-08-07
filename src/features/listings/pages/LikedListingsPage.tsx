@@ -1,34 +1,11 @@
 import { PageHeader, Spinner, EmptyState } from "@/components/ui";
-import { useAuth } from "@/features/auth";
-import { useListings } from "../hooks/useListings";
+import { useLikedListingsPage } from "../hooks/useLikedListingsPage";
 import { ListingGrid } from "../components/ListingGrid";
-import { useQuery } from "@tanstack/react-query";
-import { hasUserLiked } from "@/services";
 
 export const LikedListingsPage = () => {
-  const { user } = useAuth();
-  const { data: listings, isLoading: listingsLoading } = useListings();
+  const { likedListings, isLoading } = useLikedListingsPage();
 
-  const { data: likedListings = [], isLoading: likedLoading } = useQuery({
-    queryKey: ["liked-listings", user?.uid, listings?.map((listing) => listing.id).join(",")],
-    queryFn: async () => {
-      if (!user || !listings) return [];
-
-      const likedResults = await Promise.all(
-        listings.map(async (listing) => ({
-          listing,
-          liked: await hasUserLiked(listing.id, user.uid),
-        }))
-      );
-
-      return likedResults
-        .filter((result) => result.liked)
-        .map((result) => result.listing);
-    },
-    enabled: !!user && !!listings,
-  });
-
-  if (listingsLoading || likedLoading) {
+  if (isLoading) {
     return <Spinner />;
   }
 

@@ -1,7 +1,10 @@
-import { useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth";
+import { useStartChat } from "@/features/chat";
 import { useListing, useDeleteListing } from "./useListings";
+import { useListingLike } from "./useListingLike";
+import toast from "react-hot-toast";
 
 export const useListingDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +12,11 @@ export const useListingDetailPage = () => {
   const navigate = useNavigate();
   const { data: listing, isLoading } = useListing(id!);
   const deleteMutation = useDeleteListing();
+  const { startChat, loading: chatLoading } = useStartChat();
+  const { liked, likeCount, toggle: toggleLike } = useListingLike(listing?.id ?? "");
+
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [whisperCopied, setWhisperCopied] = useState(false);
 
   const isOwner = user?.uid === listing?.userId;
 
@@ -17,6 +25,55 @@ export const useListingDetailPage = () => {
     await deleteMutation.mutateAsync(listing.id);
     navigate("/my-listings");
   }, [listing, deleteMutation, navigate]);
+
+  const handleContactSeller = useCallback(async () => {
+    if (!listing) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (!listing.userId || listing.userId === user.uid) {
+      toast.error("Unable to start chat for this listing");
+      return;
+    }
+
+    try {
+      const conversationId = await startChat(listing.userId, {
+        id: listing.id,
+        itemName: listing.itemName,
+        itemIconUrl: listing.itemIconUrl,
+        price: listing.price,
+        server: listing.server,
+      });
+      if (conversationId) {
+        navigate(`/chats/${conversationId}`);
+      }
+    } catch {
+      toast.error("Could not open chat right now. Please try again.");
+    }
+  }, [listing, user, startChat, navigate]);
+
+  const handleCopyWhisper = useCallback(async () => {
+    if (!listing?.sellerIgn) return;
+    const command = `/whisper ${listing.sellerIgn} Hey I'm contacting you about ${listing.itemName} you posted at ms-classic-fm`;
+    try {
+      await navigator.clipboard.writeText(command);
+      setWhisperCopied(true);
+      setTimeout(() => setWhisperCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  }, [listing]);
+
+  // Close the screenshot lightbox on ESC
+  useEffect(() => {
+    if (!showImageModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowImageModal(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showImageModal]);
 
   const activeStats = listing?.stats
     ? Object.entries(listing.stats).filter(
@@ -31,5 +88,14 @@ export const useListingDetailPage = () => {
     activeStats,
     handleDelete,
     isDeleting: deleteMutation.isPending,
+    chatLoading,
+    handleContactSeller,
+    liked,
+    likeCount,
+    toggleLike,
+    showImageModal,
+    setShowImageModal,
+    whisperCopied,
+    handleCopyWhisper,
   };
 }

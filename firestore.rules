@@ -78,7 +78,7 @@ service cloud.firestore {
       allow update: if isAuthenticated()
         && request.auth.uid in resource.data.participants
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount"
+          "lastMessage", "lastMessageTime", "lastMessageSender", "unreadCount", "typing"
         ]);
 
       match /messages/{messageId} {

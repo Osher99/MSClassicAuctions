@@ -28,7 +28,7 @@ export const getUserProfile = async (
 
 export const updateUserProfile = async (
   uid: string,
-  data: Partial<Pick<UserProfile, "username" | "avatarUrl" | "ign">>
+  data: Partial<Pick<UserProfile, "username" | "avatarUrl" | "ign" | "wishlistItemIds">>
 ): Promise<void> => {
   await updateDoc(doc(db, USERS_COLLECTION, uid), data);
 };

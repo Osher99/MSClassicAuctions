@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, type FormEvent } from "react";
 import type { ListingFormData, MapleItemResult, ItemStats } from "@/types";
 import { MAPLE_SERVERS } from "../constants";
-import { getItemIconUrl } from "@/services/maplestory.service";
+import { getItemIconUrl } from "@/services/itemsData.service";
 import { getScrollSuccessRate } from "../utils/itemDisplay";
 
 const defaultStats: ItemStats = {
@@ -22,6 +22,7 @@ const defaultData: ListingFormData = {
   amount: undefined,
   description: "",
   price: 0,
+  currentOffer: undefined,
   server: MAPLE_SERVERS[0],
   isInStore: false,
   condition: "clean",
@@ -79,7 +80,7 @@ export const useListingForm = (
   );
 
   const update = useCallback(
-    (field: keyof ListingFormData, value: string | number | boolean) =>
+    (field: keyof ListingFormData, value: string | number | boolean | undefined) =>
       setForm((prev) => ({ ...prev, [field]: value })),
     []
   );

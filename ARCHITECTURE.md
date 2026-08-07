@@ -1,5 +1,9 @@
 # Architecture & Changes Overview
 
+> This file documents the contact-form/email architecture specifically.
+> For current deployment status, secrets, and known gotchas across the
+> whole project, see [`STATE.md`](STATE.md).
+
 ## 🔄 Before vs After
 
 ### BEFORE ❌
@@ -132,22 +136,30 @@ Cloud Function: contactForm
 7. Return success/error response
 ```
 
-### User Registration (Identity Trigger)
+### User Registration (Firestore Trigger)
 
 ```
-User signs up (Firebase Auth)
+User signs up (Firebase Auth) → createUserProfile() writes users/{uid}
     ↓
-Triggers: beforeUserCreated event
+Triggers: onDocumentCreated("users/{userId}")
     ↓
 Cloud Function: notifyOnUserCreate
     ↓
-1. Get user data from event
+1. Read the new profile doc (email, uid)
 2. Get email credentials from secrets
 3. Create transporter (Gmail SMTP)
 4. Send admin notification
 5. Send welcome email to user
 6. Log success
 ```
+
+> Note: this used to be a v2 `beforeUserCreated` **blocking** auth trigger.
+> That requires the Firebase project to be upgraded to Google Cloud
+> Identity Platform (GCIP), which this project isn't on — deploying it
+> fails with `Blocking Functions may only be configured for GCIP
+> projects`. Firing off the `users/{userId}` Firestore write instead
+> (which already happens right after signup) avoids that requirement
+> entirely with the same effect. See `STATE.md` for the full story.
 
 ---
 
@@ -198,11 +210,15 @@ POST /contactForm
 
 ## 🎯 Environment Variables
 
-### Development (.env.local)
+### Development (.env.development.local)
 ```env
 VITE_FUNCTIONS_BASE_URL=http://localhost:5001
 VITE_FIREBASE_PROJECT_ID=your-project-id
 ```
+Vite loads `.env.local` in **every** mode, including production builds —
+that's the wrong file for dev-only/dummy values. `.env.development.local`
+only applies when running `vite`/`vite dev` (mode `development`), so a
+plain `npm run build` can never accidentally bundle placeholder values.
 
 ### Production (Firebase)
 Secrets in Firebase Functions:
@@ -231,11 +247,14 @@ Secrets in Firebase Functions:
 
 ```
 [ ] Gmail account has 2FA enabled
-[ ] App password generated (16 chars)
+[ ] App password generated (16 chars) — must be for the exact Gmail
+    account in EMAIL_USER, not whichever Google account you're logged
+    into when generating it
 [ ] Secrets set: firebase functions:secrets:set EMAIL_USER
 [ ] Secrets set: firebase functions:secrets:set EMAIL_PASS
-[ ] Functions built: npm run build (in functions dir)
 [ ] Functions deployed: firebase deploy --only functions
+    (firebase.json's predeploy hook now runs `npm run build` for you —
+    no need to build functions/ manually first)
 [ ] Frontend built: npm run build
 [ ] Frontend deployed: firebase deploy --only hosting
 [ ] Test contact form in production

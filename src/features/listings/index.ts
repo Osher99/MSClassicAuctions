@@ -18,3 +18,4 @@ export {
   useDeleteListing,
 } from "./hooks/useListings";
 export { useListingLike } from "./hooks/useListingLike";
+export { useItemSearchDropdown } from "./hooks/useItemSearchDropdown";

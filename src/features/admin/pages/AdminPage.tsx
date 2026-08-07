@@ -1,10 +1,7 @@
-import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useAdminUsers, useAdminListings, useUpdateUserStatus, useAdminDeleteListing, useAdminReports, useUpdateReportStatus } from "../hooks/useAdmin";
+import { useAdminPage } from "../hooks/useAdminPage";
 import { PageHeader, Card, Button, Spinner, Badge } from "@/components/ui";
 import type { UserProfile, Listing, UserStatus, Report } from "@/types";
-
-type Tab = "users" | "listings" | "reports";
 
 const reportStatusColors: Record<string, "orange" | "green" | "purple"> = {
   pending: "orange",
@@ -161,39 +158,20 @@ const ListingRow = ({ listing, onDelete }: { listing: Listing; onDelete: (id: st
 };
 
 export const AdminPage = () => {
-  const [tab, setTab] = useState<Tab>("users");
-  const { data: users, isLoading: usersLoading } = useAdminUsers();
-  const { data: listings, isLoading: listingsLoading } = useAdminListings();
-  const { data: reports, isLoading: reportsLoading } = useAdminReports();
-  const updateStatus = useUpdateUserStatus();
-  const deleteListing = useAdminDeleteListing();
-  const updateReport = useUpdateReportStatus();
-
-  const handleStatusChange = useCallback(
-    (uid: string, status: UserStatus) => {
-      const label = status === "banned" ? "ban" : status === "suspended" ? "suspend" : "activate";
-      if (!window.confirm(`Are you sure you want to ${label} this user?`)) return;
-      updateStatus.mutate({ uid, status });
-    },
-    [updateStatus]
-  );
-
-  const handleDeleteListing = useCallback(
-    (id: string) => {
-      if (!window.confirm("Are you sure you want to remove this listing?")) return;
-      deleteListing.mutate(id);
-    },
-    [deleteListing]
-  );
-
-  const handleReportStatusChange = useCallback(
-    (reportId: string, status: Report["status"]) => {
-      updateReport.mutate({ reportId, status });
-    },
-    [updateReport]
-  );
-
-  const pendingReportsCount = reports?.filter((r) => r.status === "pending").length ?? 0;
+  const {
+    tab,
+    setTab,
+    users,
+    usersLoading,
+    listings,
+    listingsLoading,
+    reports,
+    reportsLoading,
+    handleStatusChange,
+    handleDeleteListing,
+    handleReportStatusChange,
+    pendingReportsCount,
+  } = useAdminPage();
 
   return (
     <div className="max-w-7xl mx-auto">

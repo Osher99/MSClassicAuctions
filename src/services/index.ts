@@ -12,7 +12,8 @@ export {
   deleteListing,
   MAX_ACTIVE_LISTINGS,
 } from "./listings.service";
-export { searchItems, getItemIconUrl } from "./maplestory.service";
+export { searchItems, getItemIconUrl, getItemById, getItemCategoryIndex } from "./itemsData.service";
+export type { ItemCategoryInfo } from "./itemsData.service";
 export { uploadListingImage, deleteListingImage } from "./storage.service";
 export {
   createUserProfile,
@@ -27,9 +28,13 @@ export {
   sendMessage,
   subscribeToMessages,
   subscribeToConversations,
+  subscribeToConversation,
   getConversation,
   markConversationRead,
   subscribeToUnreadCount,
   blockConversation,
+  setTypingStatus,
 } from "./chat.service";
 export { createReport, getAllReports, updateReportStatus } from "./report.service";
+export { getMarketplaceStats } from "./stats.service";
+export type { MarketplaceStats } from "./stats.service";

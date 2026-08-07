@@ -18,6 +18,19 @@ body {
   min-height: 100vh;
 }
 
+/* Tailwind v4 no longer defaults <button> to a pointer cursor (browser
+   default is "default"). Restore it everywhere, plus non-<button>
+   clickable elements like the listing card (role="link"). */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+[role="link"] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
