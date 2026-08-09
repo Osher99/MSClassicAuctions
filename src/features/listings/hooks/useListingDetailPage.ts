@@ -1,14 +1,35 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth";
 import { useStartChat } from "@/features/chat";
-import { useListing, useDeleteListing } from "./useListings";
+import { useListing, useDeleteListing, useIncrementListingView } from "./useListings";
 import { useListingLike } from "./useListingLike";
 import toast from "react-hot-toast";
 
+const VIEWED_LISTINGS_KEY = "viewedListingIds";
+
+const hasViewedThisSession = (id: string): boolean => {
+  try {
+    const viewed = JSON.parse(sessionStorage.getItem(VIEWED_LISTINGS_KEY) ?? "[]");
+    return Array.isArray(viewed) && viewed.includes(id);
+  } catch {
+    return false;
+  }
+};
+
+const markViewedThisSession = (id: string): void => {
+  try {
+    const viewed = JSON.parse(sessionStorage.getItem(VIEWED_LISTINGS_KEY) ?? "[]");
+    const next = Array.isArray(viewed) ? viewed : [];
+    sessionStorage.setItem(VIEWED_LISTINGS_KEY, JSON.stringify([...next, id]));
+  } catch {
+    // sessionStorage unavailable (private browsing, etc.) — skip dedup silently
+  }
+};
+
 export const useListingDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { data: listing, isLoading } = useListing(id!);
   const deleteMutation = useDeleteListing();
@@ -19,6 +40,18 @@ export const useListingDetailPage = () => {
   const [whisperCopied, setWhisperCopied] = useState(false);
 
   const isOwner = user?.uid === listing?.userId;
+  const incrementView = useIncrementListingView();
+
+  // Count a view once auth has resolved, skipping the owner's own visits and
+  // deduping repeat visits within the same browser session.
+  const viewCountedRef = useRef(false);
+  useEffect(() => {
+    if (!listing || authLoading || isOwner || viewCountedRef.current) return;
+    if (hasViewedThisSession(listing.id)) return;
+    viewCountedRef.current = true;
+    markViewedThisSession(listing.id);
+    incrementView.mutate(listing.id);
+  }, [listing, authLoading, isOwner, incrementView.mutate]);
 
   const handleDelete = useCallback(async () => {
     if (!listing || !window.confirm("Are you sure you want to delete this listing?")) return;

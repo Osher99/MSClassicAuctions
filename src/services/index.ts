@@ -10,10 +10,13 @@ export {
   backfillListingProfile,
   reactivateListing,
   deleteListing,
+  incrementListingView,
   MAX_ACTIVE_LISTINGS,
 } from "./listings.service";
 export { searchItems, getItemIconUrl, getItemById, getItemCategoryIndex } from "./itemsData.service";
 export type { ItemCategoryInfo } from "./itemsData.service";
+export { searchMaps, formatMapLocation } from "./mapsData.service";
+export type { MapResult } from "./mapsData.service";
 export { uploadListingImage, deleteListingImage } from "./storage.service";
 export {
   createUserProfile,

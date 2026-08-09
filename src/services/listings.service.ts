@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   Timestamp,
   deleteField,
+  increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Listing, ListingFormData } from "@/types";
@@ -27,10 +28,27 @@ const sanitizeListingData = <T extends Partial<ListingFormData>>(data: T): T => 
     Object.entries(data).filter(([, value]) => value !== undefined && !Number.isNaN(value))
   ) as T;
 
-  if (!cleaned.isInStore) {
+  if (cleaned.isInStore) {
+    delete cleaned.mapId;
+    delete cleaned.mapName;
+    delete cleaned.mapRegion;
+    delete cleaned.mapReturnMapName;
+    delete cleaned.mapChannel;
+  } else if (cleaned.isPrivateSale) {
     delete cleaned.storeChannel;
     delete cleaned.fmRoom;
-    delete cleaned.sellerIgn;
+    delete cleaned.mapId;
+    delete cleaned.mapName;
+    delete cleaned.mapRegion;
+    delete cleaned.mapReturnMapName;
+    delete cleaned.mapChannel;
+  } else {
+    delete cleaned.storeChannel;
+    delete cleaned.fmRoom;
+  }
+
+  if (!cleaned.isPrivateSale) {
+    delete cleaned.isPrivateSale;
   }
 
   if (cleaned.sellerIgn === "") {
@@ -48,11 +66,30 @@ const prepareListingUpdateData = (data: Partial<ListingFormData>): Record<string
     nextData[key] = value;
   });
 
-  if (nextData.isInStore === false) {
+  if (nextData.isInStore === true) {
+    nextData.mapId = deleteField();
+    nextData.mapName = deleteField();
+    nextData.mapRegion = deleteField();
+    nextData.mapReturnMapName = deleteField();
+    nextData.mapChannel = deleteField();
+  } else if (data.isPrivateSale === true) {
     nextData.storeChannel = deleteField();
     nextData.fmRoom = deleteField();
-    nextData.sellerIgn = deleteField();
-  } else if ("sellerIgn" in nextData && !nextData.sellerIgn) {
+    nextData.mapId = deleteField();
+    nextData.mapName = deleteField();
+    nextData.mapRegion = deleteField();
+    nextData.mapReturnMapName = deleteField();
+    nextData.mapChannel = deleteField();
+  } else if (nextData.isInStore === false) {
+    nextData.storeChannel = deleteField();
+    nextData.fmRoom = deleteField();
+  }
+
+  if ("isPrivateSale" in nextData && !nextData.isPrivateSale) {
+    nextData.isPrivateSale = deleteField();
+  }
+
+  if ("sellerIgn" in nextData && !nextData.sellerIgn) {
     nextData.sellerIgn = deleteField();
   }
 
@@ -140,8 +177,15 @@ export const createListing = async (
     createdAt: serverTimestamp(),
     expiresAt,
     isActive: true,
+    viewCount: 0,
   });
   return docRef.id;
+};
+
+/** Increment a listing's view counter by one */
+export const incrementListingView = async (id: string): Promise<void> => {
+  const docRef = doc(db, LISTINGS_COLLECTION, id);
+  await updateDoc(docRef, { viewCount: increment(1) });
 };
 
 export const updateListing = async (

@@ -33,17 +33,22 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid;
 
-      // Owner/admin can update anything; authenticated users can only change likeCount.
+      // Owner/admin can update anything; authenticated users can only change likeCount/viewCount;
+      // anyone (incl. guests) can bump viewCount by exactly 1 per write, so page views count
+      // even for logged-out visitors without opening the field up to an arbitrary overwrite.
       allow update: if (isOwner(resource.data.userId)
         || isAdmin()
         || (isAuthenticated()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likeCount"])));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likeCount", "viewCount"]))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["viewCount"])
+          && request.resource.data.viewCount == resource.data.get("viewCount", 0) + 1));
       allow delete: if isOwner(resource.data.userId) || isAdmin();
 
       // --- LIKES subcollection ---
+      // Doc ID is the liking user's own UID — only that user may create/delete their like.
       match /likes/{likeUserId} {
         allow read: if true;
-        allow write: if isAuthenticated();
+        allow write: if isOwner(likeUserId);
       }
     }
 

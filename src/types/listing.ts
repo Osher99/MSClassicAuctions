@@ -56,10 +56,19 @@ export interface Listing {
   currentOffer?: number;
   server: string;
 
-  // Store info
+  // Where to find the seller: Free Market store (isInStore), a specific map,
+  // or a private sale (isPrivateSale, no location shown). sellerIgn applies
+  // to all three — kept independent of which one is chosen.
   isInStore: boolean;
+  isPrivateSale?: boolean;
   storeChannel?: number;
   fmRoom?: number;
+  mapId?: number;
+  mapName?: string;
+  mapRegion?: string;
+  mapReturnMapName?: string;
+  /** Channel number, when the seller set up a private store on this map */
+  mapChannel?: number;
   sellerIgn?: string;
   listingImageUrl?: string;
   listingImagePath?: string;
@@ -70,6 +79,7 @@ export interface Listing {
 
   // Engagement
   likeCount: number;
+  viewCount?: number;
 
   // System
   userId: string;
@@ -81,4 +91,4 @@ export interface Listing {
   isActive: boolean;
 }
 
-export type ListingFormData = Omit<Listing, "id" | "likeCount" | "userId" | "userEmail" | "username" | "userAvatarUrl" | "createdAt" | "expiresAt" | "isActive">;
+export type ListingFormData = Omit<Listing, "id" | "likeCount" | "viewCount" | "userId" | "userEmail" | "username" | "userAvatarUrl" | "createdAt" | "expiresAt" | "isActive">;

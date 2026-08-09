@@ -1,7 +1,7 @@
-import { getItemIconUrl } from "@/services/itemsData.service";
+import { getItemIconUrl, searchItems } from "@/services/itemsData.service";
 import type { MapleItemResult } from "@/types";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
-import { useItemSearchDropdown } from "../hooks/useItemSearchDropdown";
+import { useSearchDropdown } from "../hooks/useSearchDropdown";
 
 const FALLBACK_ICON =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23475569'%3E%3Crect width='24' height='24' rx='4'/%3E%3C/svg%3E";
@@ -19,7 +19,7 @@ interface ItemSearchProps {
 
 export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps) => {
   const { query, setQuery, results, isOpen, setIsOpen, loading, wrapperRef } =
-    useItemSearchDropdown();
+    useSearchDropdown<MapleItemResult>(searchItems);
   const selectedRequirementLabel = selectedItem
     ? getItemRequirementLabel({
         name: selectedItem.name,

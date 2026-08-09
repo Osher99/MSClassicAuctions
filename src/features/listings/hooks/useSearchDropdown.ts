@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { searchItems } from "@/services";
-import type { MapleItemResult } from "@/types";
 
 /**
- * Debounce-free item-name search with an open/closed dropdown and
- * click-outside-to-close behavior. Shared by ItemSearch (listing
- * creation) and the Wishlist page's "add an item" search.
+ * Debounce-free name search with an open/closed dropdown and
+ * click-outside-to-close behavior. `searchFn` must be a stable reference
+ * (a plain exported function, not an inline lambda) since it's a
+ * dependency of the search effect.
+ *
+ * Shared by ItemSearch (listing creation), the Wishlist page's "add an
+ * item" search, and the "specific map" picker in ListingForm.
  */
-export const useItemSearchDropdown = (minChars = 2) => {
+export const useSearchDropdown = <T>(searchFn: (query: string) => Promise<T[]>, minChars = 2) => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<MapleItemResult[]>([]);
+  const [results, setResults] = useState<T[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -23,7 +25,7 @@ export const useItemSearchDropdown = (minChars = 2) => {
 
     let cancelled = false;
     setLoading(true);
-    searchItems(query)
+    searchFn(query)
       .then((items) => {
         if (cancelled) return;
         setResults(items);
@@ -39,7 +41,7 @@ export const useItemSearchDropdown = (minChars = 2) => {
     return () => {
       cancelled = true;
     };
-  }, [query, minChars]);
+  }, [query, minChars, searchFn]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

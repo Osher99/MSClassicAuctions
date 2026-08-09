@@ -7,8 +7,9 @@ import {
   updateListing,
   reactivateListing,
   deleteListing,
+  incrementListingView,
 } from "@/services";
-import type { ListingFormData } from "@/types";
+import type { Listing, ListingFormData } from "@/types";
 import toast from "react-hot-toast";
 
 const LISTINGS_KEY = ["listings"];
@@ -33,6 +34,19 @@ export const useListing = (id: string) => {
     queryKey: [...LISTINGS_KEY, id],
     queryFn: () => getListingById(id),
     enabled: !!id,
+  });
+};
+
+/** Bumps viewCount server-side, then patches the cached listing so the UI updates instantly. */
+export const useIncrementListingView = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: incrementListingView,
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<Listing | null | undefined>([...LISTINGS_KEY, id], (old) =>
+        old ? { ...old, viewCount: (old.viewCount ?? 0) + 1 } : old
+      );
+    },
   });
 };
 

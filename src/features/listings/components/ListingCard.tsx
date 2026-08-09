@@ -51,6 +51,8 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
   const timeAgo = listing.createdAt
     ? formatTimeAgo(listing.createdAt.toDate())
     : "";
+  const viewsLabel = `👁️ ${(listing.viewCount ?? 0).toLocaleString()}`;
+  const footerSubtitle = timeAgo ? `${timeAgo} · ${viewsLabel}` : viewsLabel;
   const { liked, likeCount, toggle } = useListingLike(listing.id);
   const isOwnerListing = user?.uid === listing.userId;
   const requirementLabel = getItemRequirementLabel({
@@ -175,7 +177,7 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
           <Badge variant={listing.listingImageUrl ? "blue" : "gray"} size="sm">
             {listing.listingImageUrl ? "📸 Screenshot" : "No Screenshot"}
           </Badge>
-          {listing.isInStore && (
+          {(listing.isInStore || (!listing.isPrivateSale && listing.mapName)) && (
             <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-semibold whitespace-nowrap">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -223,7 +225,7 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
           email={listing.userEmail}
           username={listing.username}
           avatarUrl={listing.userAvatarUrl}
-          subtitle={timeAgo}
+          subtitle={footerSubtitle}
           size="sm"
         />
         <div className="flex items-center gap-2">

@@ -17,9 +17,11 @@ service firebase.storage {
 
     match /listing-images/{userId}/{fileName} {
       allow read: if true;
+      // Mirrors the client's own limits (1MB, jpeg/png/webp only) so a user
+      // bypassing the client can't upload larger files or other content types.
       allow write: if (isOwner(userId) || isAdmin())
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.size < 1 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
       allow delete: if isOwner(userId) || isAdmin();
     }
   }

@@ -3,6 +3,7 @@ import type { ListingFormData } from "@/types";
 import { MAPLE_SERVERS } from "../constants";
 import { Button, Input, Textarea, Select } from "@/components/ui";
 import { ItemSearch } from "./ItemSearch";
+import { MapSearch } from "./MapSearch";
 import { useListingForm, statFields } from "../hooks/useListingForm";
 import { getItemIconUrl } from "@/services";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
@@ -36,6 +37,8 @@ export const ListingForm = ({
     removeStat,
     handleItemSelect,
     handleItemClear,
+    handleMapSelect,
+    handleMapClear,
   } = useListingForm(initialData, onSubmit);
   const [listingImageFile, setListingImageFile] = useState<File | null>(null);
   const [listingImagePreviewUrl, setListingImagePreviewUrl] = useState(initialData?.listingImageUrl ?? "");
@@ -281,43 +284,68 @@ export const ListingForm = ({
             disabled
           />
 
-          {/* Store Info */}
+          {/* Location */}
           <div>
-            <h3 className="text-lg font-semibold text-white">🏪 Store Info</h3>
+            <h3 className="text-lg font-semibold text-white">📍 Where can buyers find you?</h3>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-300">
-              Is now in store?
-            </label>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => update("isInStore", true)}
+                onClick={() => {
+                  update("isInStore", true);
+                  update("isPrivateSale", false);
+                  update("mapChannel", undefined);
+                  handleMapClear();
+                }}
                 className={`px-4 py-2 rounded-lg border transition-all ${
                   form.isInStore
                     ? "bg-maple-orange/20 border-maple-orange text-maple-orange"
                     : "bg-slate-800 border-maple-border text-slate-400 hover:border-slate-500"
                 }`}
               >
-                Yes
+                🏪 In Store (FM)
               </button>
               <button
                 type="button"
-                onClick={() => update("isInStore", false)}
+                onClick={() => {
+                  update("isInStore", false);
+                  update("isPrivateSale", false);
+                  update("storeChannel", undefined);
+                  update("fmRoom", undefined);
+                }}
                 className={`px-4 py-2 rounded-lg border transition-all ${
-                  !form.isInStore
+                  !form.isInStore && !form.isPrivateSale
                     ? "bg-maple-orange/20 border-maple-orange text-maple-orange"
                     : "bg-slate-800 border-maple-border text-slate-400 hover:border-slate-500"
                 }`}
               >
-                No
+                🗺️ Specific Map
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  update("isInStore", false);
+                  update("isPrivateSale", true);
+                  update("storeChannel", undefined);
+                  update("fmRoom", undefined);
+                  update("mapChannel", undefined);
+                  handleMapClear();
+                }}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  form.isPrivateSale
+                    ? "bg-maple-orange/20 border-maple-orange text-maple-orange"
+                    : "bg-slate-800 border-maple-border text-slate-400 hover:border-slate-500"
+                }`}
+              >
+                🔒 Private Sale
               </button>
             </div>
           </div>
 
-          {form.isInStore && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pl-3 border-l-2 border-maple-orange/30">
+          {form.isInStore ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 border-l-2 border-maple-orange/30">
               <Input
                 label="Store Channel"
                 type="number"
@@ -334,14 +362,39 @@ export const ListingForm = ({
                 placeholder="e.g. 1"
                 min={1}
               />
+            </div>
+          ) : form.isPrivateSale ? (
+            <p className="pl-3 border-l-2 border-maple-orange/30 text-sm text-slate-400">
+              No location will be shown on your listing — add your Seller IGN below so buyers can whisper you directly.
+            </p>
+          ) : (
+            <div className="space-y-3 pl-3 border-l-2 border-maple-orange/30">
+              <MapSearch
+                selectedMap={
+                  form.mapName
+                    ? { name: form.mapName, region: form.mapRegion ?? "", returnMapName: form.mapReturnMapName }
+                    : null
+                }
+                onSelect={handleMapSelect}
+                onClear={handleMapClear}
+              />
               <Input
-                label="Seller IGN"
-                value={form.sellerIgn || ""}
-                onChange={(e) => update("sellerIgn", e.target.value)}
-                placeholder="In-game name"
+                label="Channel (optional)"
+                type="number"
+                value={form.mapChannel || ""}
+                onChange={(e) => update("mapChannel", Number(e.target.value))}
+                placeholder="e.g. 3 — if you set up a private store there"
+                min={1}
               />
             </div>
           )}
+
+          <Input
+            label="Seller IGN"
+            value={form.sellerIgn || ""}
+            onChange={(e) => update("sellerIgn", e.target.value)}
+            placeholder="In-game name — so buyers can /whisper you"
+          />
 
           {/* Condition – Equip only */}
           {form.overallCategory === "Equip" && (

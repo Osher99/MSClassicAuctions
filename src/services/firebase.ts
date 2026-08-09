@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -14,5 +14,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Some browsers/networks (privacy extensions, strict third-party-cookie
+// partitioning, corporate proxies) block Firestore's default streaming
+// transport, surfacing as "unavailable"/"Connection failed" errors on
+// aggregation queries and writes. Auto-detecting long-polling falls back
+// to a transport that works everywhere without forcing it (and its extra
+// latency) on connections that don't need it.
+export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 export const storage = getStorage(app);

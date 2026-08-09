@@ -14,23 +14,27 @@ const emailPass = defineSecret("EMAIL_PASS");
 // if the endpoint gets spammed or hit by a bot.
 const MAX_INSTANCES = 5;
 
-// Per-IP rate limit for contactForm: max REQUESTS within WINDOW_MS.
+// Per-IP rate limit: max requests within a time window, keyed per endpoint.
 // Backed by Firestore since function instances don't share memory.
-const RATE_LIMIT_MAX_REQUESTS = 3;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const CONTACT_FORM_RATE_LIMIT = { maxRequests: 3, windowMs: 15 * 60 * 1000 };
+const MARKETPLACE_STATS_RATE_LIMIT = { maxRequests: 30, windowMs: 5 * 60 * 1000 };
 
-async function isRateLimited(ip: string): Promise<boolean> {
-  const ref = admin.firestore().collection("rateLimits").doc(`contactForm_${ip}`);
+async function isRateLimited(
+  endpoint: string,
+  ip: string,
+  { maxRequests, windowMs }: { maxRequests: number; windowMs: number }
+): Promise<boolean> {
+  const ref = admin.firestore().collection("rateLimits").doc(`${endpoint}_${ip}`);
   const now = Date.now();
 
   return admin.firestore().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const data = snap.data();
     const requests: number[] = (data?.requests ?? []).filter(
-      (t: number) => now - t < RATE_LIMIT_WINDOW_MS
+      (t: number) => now - t < windowMs
     );
 
-    if (requests.length >= RATE_LIMIT_MAX_REQUESTS) {
+    if (requests.length >= maxRequests) {
       return true;
     }
 
@@ -38,6 +42,14 @@ async function isRateLimited(ip: string): Promise<boolean> {
     tx.set(ref, { requests, updatedAt: now });
     return false;
   });
+}
+
+// Cloud Run appends the real connecting client's IP to the END of any
+// existing X-Forwarded-For value — the client fully controls everything
+// before that, so the FIRST entry is spoofable and must not be trusted.
+function getClientIp(req: Request): string {
+  const forwardedFor = req.headers["x-forwarded-for"] as string | undefined;
+  return forwardedFor?.split(",").map((s) => s.trim()).filter(Boolean).pop() || req.ip || "unknown";
 }
 
 // Helper function for CORS headers
@@ -93,10 +105,10 @@ export const contactForm = onRequest(
       return;
     }
 
-    const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
+    const ip = getClientIp(req);
 
     try {
-      if (await isRateLimited(ip)) {
+      if (await isRateLimited("contactForm", ip, CONTACT_FORM_RATE_LIMIT)) {
         res.status(429).json({
           error: "Too many messages sent. Please try again later.",
         });
@@ -155,24 +167,35 @@ export const getMarketplaceStats = onRequest(
     }
     setCorsHeaders(req, res);
 
+    const ip = getClientIp(req);
+
+    try {
+      if (await isRateLimited("getMarketplaceStats", ip, MARKETPLACE_STATS_RATE_LIMIT)) {
+        res.status(429).json({ error: "Too many requests. Please try again later." });
+        return;
+      }
+    } catch (error) {
+      console.error("Rate limit check failed:", error);
+      // Fail open — don't block legitimate users if Firestore has a hiccup.
+    }
+
     try {
       const db = admin.firestore();
-      const [usersCount, totalListingsCount, activeListingsSnap] = await Promise.all([
+      const now = admin.firestore.Timestamp.now();
+      const [usersCount, totalListingsCount, activeListingsCount] = await Promise.all([
         db.collection("users").count().get(),
         db.collection("listings").count().get(),
-        db.collection("listings").where("isActive", "==", true).get(),
+        db.collection("listings")
+          .where("isActive", "==", true)
+          .where("expiresAt", ">", now)
+          .count()
+          .get(),
       ]);
-
-      const now = Date.now();
-      const activeListings = activeListingsSnap.docs.filter((d) => {
-        const expiresAt = d.data().expiresAt as admin.firestore.Timestamp | undefined;
-        return expiresAt && expiresAt.toMillis() > now;
-      }).length;
 
       res.status(200).json({
         users: usersCount.data().count,
         totalListings: totalListingsCount.data().count,
-        activeListings,
+        activeListings: activeListingsCount.data().count,
       });
     } catch (error) {
       console.error("getMarketplaceStats error:", error);

@@ -132,7 +132,7 @@ export const ListingDetailPage = () => {
                 {listing.condition === "scrolled" ? "✨ Scrolled" : "🧼 Clean"}
               </Badge>
             )}
-            {listing.isInStore && (
+            {(listing.isInStore || (!listing.isPrivateSale && listing.mapName)) && (
               <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -141,6 +141,13 @@ export const ListingDetailPage = () => {
                 LIVE
               </span>
             )}
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 font-medium">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              {(listing.viewCount ?? 0).toLocaleString()} views
+            </span>
           </div>
         </div>
 
@@ -164,7 +171,7 @@ export const ListingDetailPage = () => {
           )}
 
           {/* Store Info */}
-          {listing.isInStore && (
+          {listing.isInStore ? (
             <div className="bg-slate-800/50 border border-maple-border rounded-lg p-4">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold text-maple-orange mb-2">
                 🏪 In Store Now
@@ -173,7 +180,7 @@ export const ListingDetailPage = () => {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                 </span>
               </h2>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {listing.storeChannel && (
                   <div>
                     <span className="text-slate-400">Channel</span>
@@ -186,27 +193,52 @@ export const ListingDetailPage = () => {
                     <p className="text-white font-medium">{listing.fmRoom}</p>
                   </div>
                 )}
-                {listing.sellerIgn && (
-                  <div>
-                    <span className="text-slate-400">Seller IGN</span>
-                    <p className="text-white font-medium">{listing.sellerIgn}</p>
-                  </div>
+              </div>
+            </div>
+          ) : (
+            !listing.isPrivateSale &&
+            listing.mapName && (
+              <div className="bg-slate-800/50 border border-maple-border rounded-lg p-4">
+                <h2 className="flex items-center gap-1.5 text-sm font-semibold text-blue-400 mb-2">
+                  📍 Location
+                </h2>
+                <p className="text-white font-medium">
+                  {listing.mapName}
+                  {listing.mapReturnMapName && (
+                    <span className="text-slate-400 font-normal"> - near: {listing.mapReturnMapName}</span>
+                  )}
+                  {listing.mapRegion && (
+                    <span className="text-slate-400 font-normal"> in {listing.mapRegion}</span>
+                  )}
+                </p>
+                {listing.mapChannel && (
+                  <p className="text-sm text-slate-400 mt-1">
+                    Channel <span className="text-white font-medium">{listing.mapChannel}</span>
+                  </p>
                 )}
               </div>
-              {listing.sellerIgn && (
-                <button
-                  type="button"
-                  onClick={handleCopyWhisper}
-                  className={`mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    whisperCopied
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-maple-orange/15 text-maple-orange hover:bg-maple-orange/25"
-                  }`}
-                  title="Copies an in-game /whisper command — paste it in MapleStory's chat"
-                >
-                  {whisperCopied ? "✓ Copied! Paste it in-game" : "📋 Copy Whisper Command"}
-                </button>
-              )}
+            )
+          )}
+
+          {/* Seller IGN + whisper — shown for any listing, FM or map */}
+          {listing.sellerIgn && (
+            <div className="bg-slate-800/50 border border-maple-border rounded-lg p-4">
+              <div className="text-sm mb-3">
+                <span className="text-slate-400">Seller IGN</span>
+                <p className="text-white font-medium">{listing.sellerIgn}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyWhisper}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  whisperCopied
+                    ? "bg-green-500/20 text-green-400"
+                    : "bg-maple-orange/15 text-maple-orange hover:bg-maple-orange/25"
+                }`}
+                title="Copies an in-game /whisper command — paste it in MapleStory's chat"
+              >
+                {whisperCopied ? "✓ Copied! Paste it in-game" : "📋 Copy Whisper Command"}
+              </button>
             </div>
           )}
 
@@ -264,6 +296,7 @@ export const ListingDetailPage = () => {
               />
             </div>
           )}
+
           {/* Share */}
           <div>
             <h2 className="text-sm font-semibold text-slate-400 mb-2">📤 Share this listing</h2>

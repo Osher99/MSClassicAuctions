@@ -1,6 +1,6 @@
 import { useWishlist, MAX_WISHLIST_ITEMS } from "../hooks/useWishlist";
-import { useItemSearchDropdown } from "@/features/listings";
-import { getItemIconUrl } from "@/services";
+import { useSearchDropdown } from "@/features/listings";
+import { getItemIconUrl, searchItems } from "@/services";
 import { PageHeader, Card, Spinner, EmptyState, PriceTag, Button } from "@/components/ui";
 import type { MapleItemResult } from "@/types";
 import { Link } from "react-router-dom";
@@ -8,7 +8,8 @@ import { Link } from "react-router-dom";
 export const WishlistPage = () => {
   const { items, loadingItems, saving, matchingListings, isFull, addItem, removeItem } =
     useWishlist();
-  const { query, setQuery, results, isOpen, wrapperRef, reset } = useItemSearchDropdown();
+  const { query, setQuery, results, isOpen, wrapperRef, reset } =
+    useSearchDropdown<MapleItemResult>(searchItems);
 
   const handleAdd = (item: MapleItemResult) => {
     addItem(item);

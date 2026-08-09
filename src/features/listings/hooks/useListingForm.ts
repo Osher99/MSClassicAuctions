@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, type FormEvent } from "react";
 import type { ListingFormData, MapleItemResult, ItemStats } from "@/types";
+import type { MapResult } from "@/services";
 import { MAPLE_SERVERS } from "../constants";
 import { getItemIconUrl } from "@/services/itemsData.service";
 import { getScrollSuccessRate } from "../utils/itemDisplay";
@@ -142,6 +143,26 @@ export const useListingForm = (
     }));
   }, []);
 
+  const handleMapSelect = useCallback((map: MapResult) => {
+    setForm((prev) => ({
+      ...prev,
+      mapId: map.id,
+      mapName: map.name,
+      mapRegion: map.region,
+      mapReturnMapName: map.returnMapName,
+    }));
+  }, []);
+
+  const handleMapClear = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      mapId: undefined,
+      mapName: undefined,
+      mapRegion: undefined,
+      mapReturnMapName: undefined,
+    }));
+  }, []);
+
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
@@ -162,6 +183,8 @@ export const useListingForm = (
     removeStat,
     handleItemSelect,
     handleItemClear,
+    handleMapSelect,
+    handleMapClear,
     handleSubmit,
   };
 }
