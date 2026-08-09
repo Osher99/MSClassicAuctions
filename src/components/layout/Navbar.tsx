@@ -5,6 +5,7 @@ import { useUnreadCount } from "@/features/chat";
 import { useWishlist } from "@/features/wishlist";
 import { logOut } from "@/services";
 import { Button } from "@/components/ui/Button";
+import { TruncatedText } from "@/components/ui/TruncatedText";
 import toast from "react-hot-toast";
 
 export const Navbar = () => {
@@ -99,9 +100,10 @@ export const Navbar = () => {
                         {(profile?.username || user.email || "?")[0].toUpperCase()}
                       </span>
                     )}
-                    <span className="text-xs text-slate-300 max-w-[120px] truncate">
-                      {profile?.username || user.email}
-                    </span>
+                    <TruncatedText
+                      text={profile?.username || user.email || ""}
+                      className="text-xs text-slate-300 max-w-[120px]"
+                    />
                   </Link>
                   <Button variant="secondary" size="sm" onClick={handleLogout}>
                     Logout

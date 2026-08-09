@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useConversations, useNow, useOtherTypingExpiry } from "../hooks/useChat";
 import { useAuth } from "@/features/auth";
 import { getUserProfiles } from "@/services";
-import { Spinner, PageHeader, Card, EmptyState } from "@/components/ui";
+import { Spinner, PageHeader, Card, EmptyState, TruncatedText } from "@/components/ui";
 import type { Conversation, UserProfile } from "@/types";
 
 export const ChatListPage = () => {
@@ -100,9 +100,10 @@ const ConversationRow = ({ convo, otherId, otherProfile, currentUserId, now }: C
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-white truncate">
-                {otherProfile?.username ?? "User"}
-              </span>
+              <TruncatedText
+                text={otherProfile?.username ?? "User"}
+                className="text-sm font-medium text-white"
+              />
               {time && (
                 <span className="text-[10px] text-slate-500 flex-shrink-0 ml-2">
                   {formatChatTime(time)}
@@ -115,23 +116,18 @@ const ConversationRow = ({ convo, otherId, otherProfile, currentUserId, now }: C
                 alt=""
                 className="w-4 h-4 object-contain flex-shrink-0"
               />
-              <span className="text-xs text-maple-orange truncate">
-                {convo.listing.itemName}
-              </span>
+              <TruncatedText text={convo.listing.itemName} className="text-xs text-maple-orange" />
             </div>
             {isTyping ? (
               <p className="text-xs mt-0.5 truncate text-maple-orange font-medium italic">
                 typing...
               </p>
             ) : (
-              <p
-                className={`text-xs mt-0.5 truncate ${
-                  unread > 0 ? "text-white font-medium" : "text-slate-400"
-                }`}
-              >
-                {convo.lastMessageSender === currentUserId && "You: "}
-                {convo.lastMessage || "No messages yet"}
-              </p>
+              <TruncatedText
+                as="p"
+                text={`${convo.lastMessageSender === currentUserId ? "You: " : ""}${convo.lastMessage || "No messages yet"}`}
+                className={`text-xs mt-0.5 ${unread > 0 ? "text-white font-medium" : "text-slate-400"}`}
+              />
             )}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { Avatar } from "./Avatar";
+import { TruncatedText } from "./TruncatedText";
 
 interface ProfileBadgeProps {
   email?: string | null;
@@ -43,13 +44,11 @@ export const ProfileBadge = ({
       <Avatar email={email} size={size} />
     )}
     <div className="flex-1 min-w-0">
-      <p
-        className={`font-medium text-slate-300 truncate ${
-          size === "sm" ? "text-xs" : "text-sm"
-        }`}
-      >
-        {username || (email ? maskEmail(email) : "Unknown")}
-      </p>
+      <TruncatedText
+        as="p"
+        text={username || (email ? maskEmail(email) : "Unknown")}
+        className={`font-medium text-slate-300 ${size === "sm" ? "text-xs" : "text-sm"}`}
+      />
       {subtitle && (
         <p
           className={`text-slate-500 ${

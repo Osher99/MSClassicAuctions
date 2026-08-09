@@ -1,7 +1,7 @@
 import { useWishlist, MAX_WISHLIST_ITEMS } from "../hooks/useWishlist";
 import { useSearchDropdown } from "@/features/listings";
 import { getItemIconUrl, searchItems } from "@/services";
-import { PageHeader, Card, Spinner, EmptyState, PriceTag, Button } from "@/components/ui";
+import { PageHeader, Card, Spinner, EmptyState, PriceTag, Button, TruncatedText } from "@/components/ui";
 import type { MapleItemResult } from "@/types";
 import { Link } from "react-router-dom";
 
@@ -36,7 +36,7 @@ export const WishlistPage = () => {
               <Card padding="sm" className="border-green-500/40 hover:border-green-500 transition-colors flex items-center gap-3">
                 <img src={listing.itemIconUrl} alt={listing.itemName} className="w-10 h-10 object-contain flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{listing.itemName}</p>
+                  <TruncatedText as="p" text={listing.itemName} className="text-white font-medium" />
                   <PriceTag amount={listing.price} size="sm" />
                 </div>
               </Card>
@@ -73,11 +73,12 @@ export const WishlistPage = () => {
                   >
                     <img src={getItemIconUrl(item.id)} alt={item.name} className="w-8 h-8 object-contain flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{item.name}</p>
-                      <p className="text-slate-400 text-xs truncate">
-                        {item.typeInfo.category} &middot; {item.typeInfo.subCategory}
-                        {already ? " · Already wishlisted" : ""}
-                      </p>
+                      <TruncatedText as="p" text={item.name} className="text-white text-sm font-medium" />
+                      <TruncatedText
+                        as="p"
+                        text={`${item.typeInfo.category} · ${item.typeInfo.subCategory}${already ? " · Already wishlisted" : ""}`}
+                        className="text-slate-400 text-xs"
+                      />
                     </div>
                   </button>
                 );
@@ -97,10 +98,12 @@ export const WishlistPage = () => {
             <Card key={item.id} padding="sm" className="flex items-center gap-3">
               <img src={getItemIconUrl(item.id)} alt={item.name} className="w-10 h-10 object-contain flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-white font-medium truncate">{item.name}</p>
-                <p className="text-slate-400 text-xs truncate">
-                  {item.typeInfo.category} &middot; {item.typeInfo.subCategory}
-                </p>
+                <TruncatedText as="p" text={item.name} className="text-white font-medium" />
+                <TruncatedText
+                  as="p"
+                  text={`${item.typeInfo.category} · ${item.typeInfo.subCategory}`}
+                  className="text-slate-400 text-xs"
+                />
               </div>
               <Button
                 variant="secondary"

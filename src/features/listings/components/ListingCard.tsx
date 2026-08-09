@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { Tooltip } from "react-tooltip";
 import type { Listing, ItemStats } from "@/types";
 import {
   PriceTag,
   ProfileBadge,
   Badge,
+  TruncatedText,
 } from "@/components/ui";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
 import { useListingLike } from "../hooks/useListingLike";
@@ -64,7 +64,6 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
     scrollSuccessRate: listing.scrollSuccessRate,
   });
 
-  const tooltipId = `item-name-${listing.id}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
     `${listing.itemName} - ${listing.price.toLocaleString()} Mesos on ${listing.server}\n${window.location.origin}/listings/${listing.id}`
   )}`;
@@ -128,20 +127,10 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
             className="w-12 h-12 object-contain flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <h3
-              className="font-bold text-white text-sm group-hover:text-maple-orange transition-colors truncate"
-              data-tooltip-id={tooltipId}
-              data-tooltip-content={listing.itemName}
-            >
-              {listing.itemName}
-            </h3>
-            <Tooltip
-              id={tooltipId}
-              place="top"
-              className="!bg-slate-800 !text-white !text-xs !font-medium !rounded-lg !px-3 !py-1.5 !shadow-xl !border !border-maple-border !z-[9999]"
-              opacity={1}
-              delayShow={300}
-              offset={8}
+            <TruncatedText
+              as="h3"
+              text={listing.itemName}
+              className="font-bold text-white text-sm group-hover:text-maple-orange transition-colors"
             />
             <p className="text-slate-400 text-xs mt-0.5">
               {listing.category} &middot; {listing.subCategory}
@@ -195,9 +184,12 @@ export const ListingCard = ({ listing }: ListingCardProps) => {
           </div>
         )}
         {listing.description && (
-          <p className="text-slate-400 text-sm line-clamp-2 leading-relaxed">
-            {listing.description}
-          </p>
+          <TruncatedText
+            as="p"
+            text={listing.description}
+            lineClamp={2}
+            className="text-slate-400 text-sm leading-relaxed"
+          />
         )}
         {listing.overallCategory === "Equip" && listing.stats && (
           (() => {

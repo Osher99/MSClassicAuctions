@@ -12,9 +12,15 @@
   --color-maple-border: #1e293b;
 }
 
+/* Dark fallback so mobile overscroll/rubber-band bounce reveals the theme
+   color instead of the browser's default white canvas. */
+html {
+  background: var(--color-maple-dark);
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: url("/assets/site_wallpaper.jpg") center top / cover no-repeat fixed;
+  background: var(--color-maple-dark) url("/assets/site_wallpaper.jpg") center top / cover no-repeat fixed;
   min-height: 100vh;
 }
 

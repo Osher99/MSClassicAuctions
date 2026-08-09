@@ -11,3 +11,4 @@ export { ProfileBadge } from "./ProfileBadge";
 export { Select } from "./Select";
 export { Spinner } from "./Spinner";
 export { Textarea } from "./Textarea";
+export { TruncatedText } from "./TruncatedText";

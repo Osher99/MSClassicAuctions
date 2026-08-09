@@ -8,6 +8,7 @@ import {
   Badge,
   PageHeader,
   EmptyState,
+  TruncatedText,
 } from "@/components/ui";
 import { MAX_ACTIVE_LISTINGS } from "@/services";
 
@@ -64,7 +65,7 @@ export const MyListingsPage = () => {
                     <div className="flex items-center gap-3">
                       <img src={listing.itemIconUrl} alt={listing.itemName} className="w-10 h-10 object-contain flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white truncate">{listing.itemName}</h4>
+                        <TruncatedText as="h4" text={listing.itemName} className="font-medium text-white" />
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
                           <Badge variant="blue" size="sm">{listing.server}</Badge>
                           <span className="text-sm text-slate-400">{listing.price.toLocaleString()} Mesos</span>
@@ -122,7 +123,7 @@ export const MyListingsPage = () => {
                     <div className="flex items-center gap-3">
                       <img src={listing.itemIconUrl} alt={listing.itemName} className="w-10 h-10 object-contain grayscale flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-white truncate">{listing.itemName}</h4>
+                        <TruncatedText as="h4" text={listing.itemName} className="font-medium text-white" />
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
                           <Badge variant="orange" size="sm">Expired</Badge>
                           <span className="text-sm text-slate-400">{listing.price.toLocaleString()} Mesos</span>

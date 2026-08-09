@@ -7,7 +7,7 @@ state they're in* so you don't have to reconstruct it from chat history.
 Update it whenever you change something it describes — append to the
 changelog at the bottom rather than rewriting history.
 
-**Last updated:** 2026-08-06
+**Last updated:** 2026-08-10
 **Firebase project:** `ms-classic-auctions`
 
 ---
@@ -20,8 +20,7 @@ changelog at the bottom rather than rewriting history.
 | `notifyOnUserCreate` | v2 Firestore (`onDocumentCreated`) | new doc at `users/{userId}` | Sends welcome email (to the new user) + admin notification, right after signup |
 | `getMarketplaceStats` | v2 HTTPS (`onRequest`) | GET `/getMarketplaceStats` (hosting rewrite) | Public counts (users / active listings / total listings) for the homepage stats section, read server-side via Admin SDK |
 
-Both:
-- Read `EMAIL_USER` / `EMAIL_PASS` secrets, send via `nodemailer` over Gmail SMTP.
+Both HTTP functions:
 - `maxInstances: 5` — cost/abuse ceiling, not a real capacity limit.
 - Source: `functions/src/index.ts` only (`functions/index.ts` at the repo
   root was old v1 dead code — deleted). `functions/lib/` is build output,
@@ -29,10 +28,21 @@ Both:
   every `firebase deploy --only functions` — you never need to build it
   by hand.
 
-`contactForm` also has a Firestore-backed per-IP rate limit: max 3
-requests / 15 minutes, tracked in the `rateLimits` collection (fails
-open if the Firestore check errors, so a hiccup there never blocks a
-real user).
+`contactForm` and `notifyOnUserCreate` read `EMAIL_USER` / `EMAIL_PASS`
+secrets and send via `nodemailer` over Gmail SMTP.
+
+**Rate limiting (both HTTP functions):** a shared `isRateLimited(endpoint, ip, {maxRequests, windowMs})`
+helper in `functions/src/index.ts`, backed by the `rateLimits` Firestore
+collection (fails open on a Firestore hiccup — never blocks a real
+user). `contactForm`: 3 requests / 15 min per IP. `getMarketplaceStats`:
+30 requests / 5 min per IP (added later — it originally had none).
+
+**IP resolution gotcha (fixed 2026-08-10):** the client fully controls
+everything except the LAST entry of `X-Forwarded-For` — Cloud Run
+appends the real connecting IP to the end of whatever value arrives.
+The original code read `.split(",")[0]` (the spoofable end), which let
+anyone bypass the rate limit entirely by sending a fake header value on
+every request. `getClientIp(req)` now takes the last entry instead.
 
 **Why `notifyOnUserCreate` is a Firestore trigger, not an auth trigger:**
 the natural choice (`beforeUserCreated` from `firebase-functions/v2/identity`)
@@ -120,6 +130,132 @@ migration was needed): `Equipment→Equip`, `Consumable→Use`, `Etc→Etc`,
 synthetic `Use`/`Consumable`/`Scroll` items so existing scroll-success-rate
 auto-fill logic keeps working unchanged.
 
+## Listing location: FM store / specific map / private sale
+
+A listing's "where to find the seller" is two independent optional
+booleans on top of the map fields, not a single enum — additive on
+purpose, to avoid a bigger refactor:
+
+- `isInStore: true` → Free Market store (`storeChannel` + `fmRoom`).
+- `isInStore: false`, `isPrivateSale` not true, `mapId` set → a specific
+  map, live-searched from `https://osmsdataexplorer.com/data/current/maps.json`
+  (`src/services/mapsData.service.ts`, same module-level-cache pattern as
+  `itemsData.service.ts`). Optional `mapChannel` — a seller can run a
+  private store on a specific channel of a specific map. Rendered as
+  `{name} - near: {return_map_name} in {region}` (`formatMapLocation`).
+- `isPrivateSale: true` → no location shown at all; buyer relies on the
+  Seller IGN + whisper button only.
+
+All field-clearing when switching between the three lives in
+`listings.service.ts`'s `sanitizeListingData` (create) and
+`prepareListingUpdateData` (edit) — each mode clears the other two
+modes' fields so stale data never lingers on the document.
+
+**Badge:** the small "LIVE" pulsing badge (card + detail-page header)
+shows for FM **and** map listings alike — it used to show the map name
+instead for map listings, but names got too long and truncated badly on
+cards. The full map name (+ near/region + channel) still shows in the
+"📍 Location" box on the listing detail page; only the compact badge
+was simplified. Private-sale listings show no badge at all.
+
+**Whisper button + Seller IGN:** unconditional — shown for *any*
+listing with `sellerIgn` set, regardless of FM/map/private. It used to
+be nested inside the FM-only "Store Info" box.
+
+**Search dropdown:** `useItemSearchDropdown` was generalized to
+`useSearchDropdown<T>(searchFn, minChars)` so the same debounced
+search/dropdown/click-outside logic powers both item search
+(`ItemSearch.tsx`, `WishlistPage.tsx`) and map search (`MapSearch.tsx`,
+3-char minimum). Callers must pass a **stable** `searchFn` reference —
+it's an effect dependency.
+
+## View counts
+
+`Listing.viewCount` (optional, absent = 0). Firestore rule allows
+**anyone** — authenticated or not — to bump it, but only by exactly
+`+1` per write (`request.resource.data.viewCount == resource.data.get("viewCount", 0) + 1`),
+so guest browsing counts too without opening the field to an arbitrary
+overwrite. Counted once per listing per browser session
+(`sessionStorage`), skipping the listing owner's own visits, and only
+after Firebase Auth's initial state has resolved (so a returning owner
+isn't briefly miscounted as a guest).
+
+**UI update gotcha:** the listing detail page reads via a one-shot
+React Query fetch (`useListing`), not a live `onSnapshot` listener, so
+after the `increment(1)` write lands in Firestore the on-screen number
+would only catch up on the next full refetch/reload. `useIncrementListingView`
+(in `useListings.ts`) patches the cached listing (`viewCount + 1`)
+locally right after the write succeeds, so the page updates instantly
+without needing a live listener for just this one field.
+
+## Firestore transport
+
+`src/services/firebase.ts` uses `initializeFirestore(app, { experimentalAutoDetectLongPolling: true })`
+instead of plain `getFirestore(app)`. Some browsers/networks (privacy
+extensions, strict third-party-cookie/storage partitioning, corporate
+proxies) block Firestore's default streaming (WebChannel) transport,
+surfacing as `RunAggregationQuery ... "unavailable"` / `"Connection
+failed"` errors on aggregation queries and writes. Auto-detect falls
+back to long-polling only on connections that actually need it.
+
+## Auth domain
+
+`VITE_FIREBASE_AUTH_DOMAIN` is `ms-classic-auctions.web.app` (the
+site's actual hosting domain), not the default
+`ms-classic-auctions.firebaseapp.com`. Firebase Auth's helper iframe
+(`/__/auth/iframe`) is loaded from whatever `authDomain` is set to; if
+that differs from the page's own origin, Chrome treats it as
+third-party and logs "Partitioned cookie or storage access...
+third-party context" on every page load. Both domains were already in
+Firebase Auth's `authorizedDomains` (Firebase adds both automatically),
+so this was a safe swap — confirmed via the Identity Toolkit admin API
+before changing it. `.env.development.local` is deliberately left on
+the old value; it's dummy/emulator config per its own header comment,
+not something real users ever hit.
+
+## Truncated text + tooltips
+
+`src/components/ui/TruncatedText.tsx` wraps `react-tooltip` in the
+site's existing tooltip styling and is used everywhere text is
+`truncate`d or `line-clamp`ed (item/map names, usernames, chat message
+previews, listing descriptions — ~15 call sites). Use it instead of a
+raw `truncate` class + manual `<Tooltip>` for any new truncated text.
+
+**Clipping gotcha:** `react-tooltip` renders inline in the React tree
+with `position: absolute` — it does **not** portal to `document.body`
+on its own. A card with `overflow-hidden` (every `ListingCard`) — or
+even just a `transform` from a `:hover` effect, which creates a new
+CSS containing block — silently clips the tooltip to invisible even
+though it exists in the DOM with `opacity: 1`. `TruncatedText` works
+around this by portaling the `<Tooltip>` itself to `document.body` via
+`createPortal`; the anchor element stays where it is (react-tooltip
+matches by `data-tooltip-id`, which works regardless of DOM location).
+
+## Overscroll white flash
+
+`body` had a `background: url(...)` image with no color fallback, and
+`html` had no background at all. Mobile overscroll/rubber-band bounce
+revealed plain white above the header. Fixed in `src/index.css`: both
+`html` and `body` now have `--color-maple-dark` as a background/fallback.
+
+## Security hardening pass (2026-08-10)
+
+- **Likes subcollection** (`listings/{id}/likes/{likeUserId}`): was
+  `allow write: if isAuthenticated()` — any signed-in user could
+  create/delete **any other user's** like doc (vandalize or forge
+  likes app-wide). Now `isOwner(likeUserId)`.
+- **`getMarketplaceStats` query:** was `.where("isActive","==",true).get()`
+  (fetches every matching doc) then filtered `expiresAt` in JS. Replaced
+  with a single compound `count()` query — needs the composite index
+  `listings(isActive ASC, expiresAt ASC)` now in `firestore.indexes.json`.
+  Also gained its own rate limit (see Cloud Functions above); it had none.
+- **Storage rules** (`storage.rules`, `listing-images/{userId}/{fileName}`):
+  was 10MB / any `image/*`. Now matches the client's own enforced limits
+  exactly — 1MB, `image/(jpeg|png|webp)` only.
+
+See the Cloud Functions section above for the `X-Forwarded-For`
+IP-spoofing fix (same pass).
+
 ## Chat typing indicator
 
 `conversations/{id}.typing` is a map of `uid → epoch ms of last keystroke
@@ -148,6 +284,8 @@ refactor `MarketplaceStatsSection`, keep the observed `<div ref=...>`
 rendering unconditionally (not gated behind the stats-loaded check);
 gating it caused the ref to be `null` when the observer effect first
 ran, so it silently never attached and the numbers stayed at 0 forever.
+See the Security hardening pass below for the `getMarketplaceStats`
+query-efficiency + rate-limit fix.
 
 ## Not done (deliberately deferred)
 
@@ -177,3 +315,21 @@ ran, so it silently never attached and the numbers stayed at 0 forever.
   animated Users/Active/Total-listings stats section on the homepage,
   backed by a new `getMarketplaceStats` function — which surfaced the
   missing `roles/datastore.user` grant (see Billing/IAM above).
+
+- **2026-08-10** — Listing location model expanded from a binary
+  FM/map choice to three modes (FM store / specific map / private
+  sale), plus an optional per-map channel; whisper button + Seller IGN
+  decoupled from FM-only (see Listing location above). Added per-listing
+  view counts (see View counts above). Generalized the item-search
+  dropdown hook to `useSearchDropdown<T>` to also power map search.
+  Added a shared `TruncatedText` tooltip component to ~15 truncated-text
+  spots app-wide, portaled to `document.body` to escape overflow/transform
+  clipping from cards (see Truncated text + tooltips above). Ran a
+  security pass: fixed a likes-subcollection ownership hole, a spoofable
+  `X-Forwarded-For` rate-limit bypass, an inefficient + unlimited
+  `getMarketplaceStats` query, and tightened Storage upload rules to
+  match the client's own limits (see Security hardening pass above). Fixed Firestore transport failures on
+  networks/browsers blocking the default streaming channel (auto-detect
+  long-polling), a Firebase Auth iframe third-party-storage warning
+  (`authDomain` now matches the hosting domain), and a white flash on
+  mobile overscroll (missing dark background on `html`/`body`).

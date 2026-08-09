@@ -2,6 +2,7 @@ import { getItemIconUrl, searchItems } from "@/services/itemsData.service";
 import type { MapleItemResult } from "@/types";
 import { getItemRequirementLabel } from "../utils/itemDisplay";
 import { useSearchDropdown } from "../hooks/useSearchDropdown";
+import { TruncatedText } from "@/components/ui";
 
 const FALLBACK_ICON =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23475569'%3E%3Crect width='24' height='24' rx='4'/%3E%3C/svg%3E";
@@ -50,7 +51,7 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
             className="w-10 h-10 object-contain"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold truncate">{selectedItem.name}</p>
+            <TruncatedText as="p" text={selectedItem.name} className="text-white font-semibold" />
             <p className="text-slate-400 text-xs">
               {selectedItem.typeInfo.category} &middot; {selectedItem.typeInfo.subCategory}
               {selectedRequirementLabel ? ` · ${selectedRequirementLabel}` : ""}
@@ -118,11 +119,12 @@ export const ItemSearch = ({ onSelect, onClear, selectedItem }: ItemSearchProps)
                     className="w-8 h-8 object-contain flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{item.name}</p>
-                    <p className="text-slate-400 text-xs truncate">
-                      {item.typeInfo.category} &middot; {item.typeInfo.subCategory}
-                      {requirementLabel ? ` · ${requirementLabel}` : ""}
-                    </p>
+                    <TruncatedText as="p" text={item.name} className="text-white text-sm font-medium" />
+                    <TruncatedText
+                      as="p"
+                      text={`${item.typeInfo.category} · ${item.typeInfo.subCategory}${requirementLabel ? ` · ${requirementLabel}` : ""}`}
+                      className="text-slate-400 text-xs"
+                    />
                   </div>
                 </button>
               );

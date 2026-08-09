@@ -1,5 +1,6 @@
 import { searchMaps, formatMapLocation, type MapResult } from "@/services";
 import { useSearchDropdown } from "../hooks/useSearchDropdown";
+import { TruncatedText } from "@/components/ui";
 
 interface MapSearchProps {
   onSelect: (map: MapResult) => void;
@@ -24,8 +25,8 @@ export const MapSearch = ({ onSelect, onClear, selectedMap }: MapSearchProps) =>
       <div className="flex items-center gap-3 p-3 bg-slate-800 border border-maple-border rounded-lg">
         <span className="text-2xl flex-shrink-0">📍</span>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold truncate">{selectedMap.name}</p>
-          <p className="text-slate-400 text-xs truncate">{formatMapLocation(selectedMap as MapResult)}</p>
+          <TruncatedText as="p" text={selectedMap.name} className="text-white font-semibold" />
+          <TruncatedText as="p" text={formatMapLocation(selectedMap as MapResult)} className="text-slate-400 text-xs" />
         </div>
         <button
           type="button"
@@ -69,8 +70,8 @@ export const MapSearch = ({ onSelect, onClear, selectedMap }: MapSearchProps) =>
             >
               <span className="text-lg flex-shrink-0">📍</span>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium truncate">{map.name}</p>
-                <p className="text-slate-400 text-xs truncate">{formatMapLocation(map)}</p>
+                <TruncatedText as="p" text={map.name} className="text-white text-sm font-medium" />
+                <TruncatedText as="p" text={formatMapLocation(map)} className="text-slate-400 text-xs" />
               </div>
             </button>
           ))}
